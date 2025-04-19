@@ -1,56 +1,56 @@
-RefreshRate: 20
-EnabledWorlds:
+refresh_rate: 20
+enabled_worlds:
   - "WORLD"
   - "OVERWORLD"
-IndoorTemperature: 64
-PeakTemperatureTime: 1400
-EnvironmentRange: 5
-InWaterModifier: -24
-Weather:
-  WeakensSun: 0.6 # % of sun's temperature blocked by clouds during storms
-  Modifier: -10 # Temperature change during storms
-Activity:
-  Sprinting: 8
-  Swimming: 0
-State:
-  Burning: 50
-  Freezing: -50
-Graduality:
-  Climate: 0.12
-  Environment: 0.15
-  Water: 0.75
-  Clothing: 0.25
-  Tool: 0.7
-  Activity: 0.02
-  State: 0.8
-Wetness:
-  Modifier: -16
-  Max: 60
-  Increment: 5
-  Decrement: 1
-  EnableDegradation: true
-Resistance:
-  Target: 75 # The more you resist, the closer to this temperature you get (In Fahrenheit)
-  PotionEffects: # The maximum and minimum you will ever reach while resisting temperature with potions
-    MaxTemperature: 90
-    MinTemperature: 10
-    List:
-      FIRE_RESISTANCE: 0.7
-      NIGHT_VISION: -0.7
-      RESISTANCE: 1.55
-  Enchantments:
-    List:
-      FIRE_PROTECTION: 0.02
-  Hunger:
-    Mid-point: 3.5
-    Resistance: 0.15
-    Vulnerability: 0.4
-  Thirst:
-    Mid-point: 3.5
-    Resistance: 0.15
-    Vulnerability: 0.4
-Debuffs:
-  GracePeriod: 30
+indoor_temperature: 64
+peak_temperature_time: 1400
+environment_range: 5
+in_water_modifier: -24
+weather:
+  sun_protection: 0.6 # % of sun's temperature blocked by clouds during storms
+  modifier: -10 # Temperature change during storms
+activity:
+  sprinting: 8
+  swimming: 0
+state:
+  burning: 50
+  freezing: -50
+graduality:
+  climate: 0.12
+  environment: 0.15
+  water: 0.75
+  clothing: 0.25
+  tool: 0.7
+  activity: 0.02
+  state: 0.8
+wetness:
+  modifier: -16
+  max: 60
+  increment: 5
+  decrement: 1
+  enable_degradation: true
+resistance:
+  ideal: 75 # The more you resist, the closer to this temperature you get (In Fahrenheit)
+  potion_effects: # The maximum and minimum you will ever reach while resisting temperature with potions
+    max_temperature: 90
+    min_temperature: 10
+    list:
+      fire_resistance: 0.7
+      night_vision: -0.7
+      resistance: 1.55
+  enchantments:
+    list:
+      fire_protection: 0.02
+  hunger:
+    midpoint: 3.5
+    resistance: 0.15
+    vulnerability: 0.4
+  thirst:
+    midpoint: 3.5
+    resistance: 0.15
+    vulnerability: 0.4
+debuffs:
+  grace_period: 30
   140:
     - "BURNING"
   129:
@@ -70,13 +70,15 @@ Debuffs:
     - "DARKNESS:1"
   -32:
     - "FREEZING"
-Clothing:
-  Warmth:
-    default: 2
-    leather: 5
-    chainmail: 0
-    golden: 1.7
-  Resistance:
-    default: -0.025
-    leather: -0.3
-    chainmail: 0
+clothing:
+  default:
+    warmth: 2
+    resistance: -0.025
+  leather:
+    warmth: 5
+    resistance: -0.3
+  chainmail:
+    warmth: 0
+    resistance: 0
+  golden:
+    warmth: 1.7

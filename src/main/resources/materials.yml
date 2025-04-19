@@ -1,4 +1,4 @@
-Blocks:
+blocks:
   lava: 50
   lava_cauldron: 46
   soul_campfire: 30
@@ -36,7 +36,7 @@ Blocks:
   ice: -9
   packed_ice: -18
   blue_ice: -36
-Items:
+items:
   lava_bucket: 18
   magma_block: 10
   soul_torch: 5
