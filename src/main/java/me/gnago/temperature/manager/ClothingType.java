@@ -1,4 +1,4 @@
-package io.github.gnago.manager;
+package me.gnago.temperature.manager;
 
 public class ClothingType {
     public final MaterialType Material;

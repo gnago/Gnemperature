@@ -1,4 +1,4 @@
-package io.github.gnago.command;
+package me.gnago.temperature.command;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

@@ -1,7 +1,7 @@
-package io.github.gnago.manager.file;
+package me.gnago.temperature.manager.file;
 
-import io.github.gnago.TemperaturePlugin;
-import io.github.gnago.manager.ClothingType;
+import me.gnago.temperature.TemperaturePlugin;
+import me.gnago.temperature.manager.ClothingType;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;

@@ -1,6 +1,6 @@
 name: 'Temperature'
 version: '${project.version}'
-main: io.github.gnago.TemperaturePlugin
+main: me.gnago.temperature.TemperaturePlugin
 api-version: 1.13
 commands:
   showbaralways:

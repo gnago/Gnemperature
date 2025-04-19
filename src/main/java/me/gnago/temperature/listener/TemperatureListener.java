@@ -1,4 +1,4 @@
-package io.github.gnago.listener;
+package me.gnago.temperature.listener;
 
 import org.bukkit.event.Listener;
 
