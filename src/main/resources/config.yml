@@ -1,0 +1,82 @@
+RefreshRate: 20
+EnabledWorlds:
+  - "WORLD"
+  - "OVERWORLD"
+IndoorTemperature: 64
+PeakTemperatureTime: 1400
+EnvironmentRange: 5
+InWaterModifier: -24
+Weather:
+  WeakensSun: 0.6 # % of sun's temperature blocked by clouds during storms
+  Modifier: -10 # Temperature change during storms
+Activity:
+  Sprinting: 8
+  Swimming: 0
+State:
+  Burning: 50
+  Freezing: -50
+Graduality:
+  Climate: 0.12
+  Environment: 0.15
+  Water: 0.75
+  Clothing: 0.25
+  Tool: 0.7
+  Activity: 0.02
+  State: 0.8
+Wetness:
+  Modifier: -16
+  Max: 60
+  Increment: 5
+  Decrement: 1
+  EnableDegradation: true
+Resistance:
+  Target: 75 # The more you resist, the closer to this temperature you get (In Fahrenheit)
+  PotionEffects: # The maximum and minimum you will ever reach while resisting temperature with potions
+    MaxTemperature: 90
+    MinTemperature: 10
+    List:
+      FIRE_RESISTANCE: 0.7
+      NIGHT_VISION: -0.7
+      RESISTANCE: 1.55
+  Enchantments:
+    List:
+      FIRE_PROTECTION: 0.02
+  Hunger:
+    Mid-point: 3.5
+    Resistance: 0.15
+    Vulnerability: 0.4
+  Thirst:
+    Mid-point: 3.5
+    Resistance: 0.15
+    Vulnerability: 0.4
+Debuffs:
+  GracePeriod: 30
+  140:
+    - "BURNING"
+  129:
+    - "BLINDNESS:1"
+  124:
+    - "NAUSEA:1"
+  108:
+    - "HUNGER:1"
+  41:
+    - "SLOWNESS:1"
+  29:
+    - "WEAKNESS:1"
+  -13:
+    - "MINING_FATIGUE:1"
+  -22:
+    - "SLOWNESS:2"
+    - "DARKNESS:1"
+  -32:
+    - "FREEZING"
+Clothing:
+  Warmth:
+    default: 2
+    leather: 5
+    chainmail: 0
+    golden: 1.7
+  Resistance:
+    default: -0.025
+    leather: -0.3
+    chainmail: 0
