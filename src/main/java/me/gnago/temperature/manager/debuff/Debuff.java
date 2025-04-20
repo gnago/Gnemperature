@@ -1,0 +1,48 @@
+package me.gnago.temperature.manager.debuff;
+
+import me.gnago.temperature.TemperaturePlugin;
+import org.bukkit.entity.LivingEntity;
+
+import java.util.Collection;
+import java.util.HashMap;
+
+public abstract class Debuff {
+    private static final HashMap<String, Debuff> DebuffRegistry = new HashMap<>();
+    protected Collection<Double> thresholds;
+    protected int delay;
+    protected int duration;
+
+    public static Debuff New(String debuffName, Collection<Double> thresholds, int delay, int duration) {
+        debuffName = debuffName.toUpperCase();
+
+        String[] potionData = debuffName.split(":"); //Config format is Effect_name:amplifier
+        if (potionData.length > 1)
+            try {
+                return new PotionEffectDebuff(potionData[0], thresholds, delay, duration, Integer.parseInt(potionData[1]));
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                TemperaturePlugin.getInstance().getLogger().warning("Could not decipher Debuff as potion effect: " + debuffName);
+            }
+        else {
+            return new FunctionDebuff(thresholds, delay, duration);
+        }
+        return null;
+    }
+
+    public Debuff(Collection<Double> thresholds, int delay, int duration) {
+        this.thresholds = thresholds;
+        this.delay = delay;
+        this.duration = duration;
+    }
+    public static Debuff Register(String name, Debuff debuff) {
+        name = name.toUpperCase();
+        if (!isRegistered(name))
+            DebuffRegistry.put(name, debuff);
+        return DebuffRegistry.get(name);
+    }
+    public static boolean isRegistered(String name) {
+        return DebuffRegistry.containsKey(name.toUpperCase());
+    }
+
+    public abstract void apply(LivingEntity entity);
+    public abstract void clear(LivingEntity entity);
+}
