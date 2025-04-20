@@ -5,6 +5,7 @@ enabled_worlds:
 indoor_temperature: 64
 peak_temperature_time: 1400
 environment_range: 5
+in_lava_modifier: 1100
 in_water_modifier: -24
 weather:
   sun_protection: 0.6 # % of sun's temperature blocked by clouds during storms

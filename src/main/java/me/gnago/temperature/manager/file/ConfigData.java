@@ -22,6 +22,7 @@ public class ConfigData {
     public static double PeakTemperatureTime;
 
     public static int EnvironmentRange;
+    public static double InLavaModifier;
     public static double InWaterModifier;
     public static double CloudyResistFactor;
     public static double CloudyModifier;
@@ -48,6 +49,7 @@ public class ConfigData {
     public static double ThirstMaxResist;
     public static double ThirstMaxVuln;
 
+    public static double MinimumBoilerTemperature;
     public static HashMap<Material,Double> BlockTemperatures;
     public static HashMap<Material,Double> ItemTemperatures;
 
@@ -61,7 +63,7 @@ public class ConfigData {
 
     public static HashMap<TemperatureType, Double> GradualityRates;
     public enum TemperatureType {
-        SUNLIGHT, WATER, ENVIRONMENT, CLOTHING, TOOL, ACTIVITY, STATE
+        CLIMATE, WATER, ENVIRONMENT, CLOTHING, TOOL, ACTIVITY, STATE
     }
 
     private final FileConfiguration configFile;
@@ -76,6 +78,7 @@ public class ConfigData {
         IndoorTemperature = configFile.getDouble("indoor_temperature", 64);
         PeakTemperatureTime = configFile.getInt("peak_temperature_time", 1400);
         EnvironmentRange = configFile.getInt("environment_range", 5);
+        InLavaModifier = configFile.getDouble("in_lava_modifier", 1100);
         InWaterModifier = configFile.getDouble("in_water_modifier", -24);
         CloudyResistFactor = configFile.getDouble("weather.sun_protection", 0.6);
         CloudyModifier = configFile.getDouble("weather.modifier", -10);
@@ -85,7 +88,7 @@ public class ConfigData {
         FreezingModifier = configFile.getDouble("state.freezing", -50);
 
         GradualityRates = new HashMap<>();
-        GradualityRates.put(TemperatureType.SUNLIGHT, configFile.getDouble("graduality.climate",0.12));
+        GradualityRates.put(TemperatureType.CLIMATE, configFile.getDouble("graduality.climate",0.12));
         GradualityRates.put(TemperatureType.ENVIRONMENT, configFile.getDouble("graduality.environment",0.15));
         GradualityRates.put(TemperatureType.WATER, configFile.getDouble("graduality.water",0.75));
         GradualityRates.put(TemperatureType.CLOTHING, configFile.getDouble("graduality.clothing",0.25));
@@ -119,15 +122,15 @@ public class ConfigData {
                 });
 
         ClothingTypes = new HashMap<>();
-        ClothingType.DefaultWarmth = configFile.getDouble("clothing.default.warmth");
-        ClothingType.DefaultResistance = configFile.getDouble("clothing.default.resistance");
+        ClothingType.setDefaults(configFile.getDouble("clothing.default.warmth"),
+                                configFile.getDouble("clothing.default.resistance"));
         for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
             String matName = mat.name().toLowerCase();
             ClothingTypes.put(mat, new ClothingType(mat,
                     configFile.getDouble("clothing." + matName + ".warmth"),
                     configFile.getDouble("clothing." + matName + ".resistance")));
         }
-
+        ResistanceEffects = new HashMap<>();
         configFile.getConfigurationSection("resistance.potion_effects.list").getKeys(false).forEach(
                 key -> {
                     PotionEffectType effType = Registry.EFFECT.match(key.toUpperCase());
@@ -137,6 +140,7 @@ public class ConfigData {
                                 configFile.getDouble("resistance.potion_effects.list." + key, 0)
                         );
                 });
+        ResistanceEnchantments = new HashMap<>();
         configFile.getConfigurationSection("resistance.enchantments.list").getKeys(false).forEach(
                 key -> {
                     Enchantment enchant = Registry.ENCHANTMENT.match(key.toUpperCase());
@@ -147,6 +151,9 @@ public class ConfigData {
                         );
                 });
 
+        MinimumBoilerTemperature = materialsFile.getDouble("minimum_boiler_temperature", 25);
+
+        BlockTemperatures = new HashMap<>();
         materialsFile.getConfigurationSection("blocks").getKeys(false).forEach(
                 key -> {
                     Material mat = Registry.MATERIAL.match(key.toUpperCase());
@@ -157,6 +164,7 @@ public class ConfigData {
                         );
                 }
         );
+        ItemTemperatures = new HashMap<>();
         materialsFile.getConfigurationSection("items").getKeys(false).forEach(
                 key -> {
                     Material mat = Registry.MATERIAL.match(key.toUpperCase());

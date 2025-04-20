@@ -1,3 +1,4 @@
+minimum_boiler_temperature: 25 # Blocks placed under water-cauldrons with this temperature or higher will boil the water in the cauldron
 blocks:
   lava: 50
   lava_cauldron: 46
