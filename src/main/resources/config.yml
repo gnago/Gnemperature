@@ -62,27 +62,24 @@ resistance:
     midpoint: 40
     resistance: 0.15
     vulnerability: 0.4
+debuff_grace_period: 30 # How many seconds it takes to apply a debuff after reaching the temperature threshold
 debuffs:
-  grace_period: 30 # How many refreshes it takes to apply a debuff after reaching the temperature threshold
-  140:
-    - "BURNING"
-  129:
-    - "BLINDNESS:1"
-  124:
-    - "NAUSEA:1"
-  108:
-    - "HUNGER:1"
-  41:
-    - "SLOWNESS:1"
-  29:
-    - "WEAKNESS:1"
-  -13:
-    - "MINING_FATIGUE:1"
-  -22:
-    - "SLOWNESS:2"
-    - "DARKNESS:1"
-  -32:
-    - "FREEZING"
+# The following example will make it so Poison I gets applied at 120°F, and Poison III gets applied at 145°F and -40°F
+# poison:1: [120]
+# poison:3: [145,-40]
+#
+# Currently available non-potion effect debuffs are: burning, freezing
+# burning: [140,-50]
+  burning: [140]
+  blindness:1: [129]
+  nausea:1: [124]
+  hunger:1: [108]
+  slowness:1: [41]
+  weakness:1: [29]
+  mining_fatigue:1: [-13]
+  slowness:2: [-22]
+  darkness:1: [-22]
+  freezing: [-32]
 clothing:
   default:
     warmth: 2

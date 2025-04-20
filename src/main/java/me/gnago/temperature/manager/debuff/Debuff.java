@@ -4,10 +4,8 @@ import me.gnago.temperature.TemperaturePlugin;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Collection;
-import java.util.HashMap;
 
 public abstract class Debuff {
-    private static final HashMap<String, Debuff> DebuffRegistry = new HashMap<>();
     protected Collection<Double> thresholds;
     protected int delay;
     protected int duration;
@@ -33,14 +31,9 @@ public abstract class Debuff {
         this.delay = delay;
         this.duration = duration;
     }
-    public static Debuff Register(String name, Debuff debuff) {
-        name = name.toUpperCase();
-        if (!isRegistered(name))
-            DebuffRegistry.put(name, debuff);
-        return DebuffRegistry.get(name);
-    }
-    public static boolean isRegistered(String name) {
-        return DebuffRegistry.containsKey(name.toUpperCase());
+
+    public int getDelay() {
+        return delay;
     }
 
     public abstract void apply(LivingEntity entity);

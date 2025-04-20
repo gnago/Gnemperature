@@ -4,7 +4,10 @@ import me.gnago.temperature.TemperaturePlugin;
 import me.gnago.temperature.api.PapiHelper;
 import me.gnago.temperature.manager.ClothingType;
 import me.gnago.temperature.manager.TemperatureMethods;
+import me.gnago.temperature.manager.debuff.Debuff;
+import me.gnago.temperature.manager.debuff.DebuffRegistry;
 import me.gnago.temperature.manager.file.ConfigData;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,13 +15,18 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 public class PlayerTemperature implements PlayerMethods {
     private double feelsLike;
     private double actuallyIs;
     private double wetness;
+    private HashMap<Integer,Debuff> scheduledDebuffs;
+    private ArrayList<Debuff> activeDebuffs;
 
     private final Player player;
 
@@ -261,7 +269,7 @@ public class PlayerTemperature implements PlayerMethods {
                         temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.ThirstMidPoint, thirstMax,
                                 thirstLevel, ConfigData.ThirstMaxResist, ConfigData.ThirstMaxVuln));
                     } catch (NumberFormatException e) {
-                        TemperaturePlugin.getInstance().getLogger().log(Level.WARNING, "Failed to retrieve ThirstBar Placeholders");
+                        TemperaturePlugin.getInstance().getLogger().warning("Failed to retrieve ThirstBar Placeholders");
                     }
                 }
             }
@@ -288,12 +296,44 @@ public class PlayerTemperature implements PlayerMethods {
     }
 
     @Override
-    public void applyDebuffs() {
-        ConfigData.Debuffs.forEach((threshold, debuffs) -> {
-            if (threshold > ConfigData.IdealTemperature) { // Hot debuff
-                if (feelsLike >= threshold) {
-                    
-                }
+    public void applyDebuffs(double prevTemp, double currTemp) {
+
+        ArrayList<Debuff> addDebuffs = DebuffRegistry.getDebuffsWithThresholdsCrossed(prevTemp, currTemp);
+        ArrayList<Debuff> acknowledgedDebuffs = new ArrayList<>(activeDebuffs);
+        acknowledgedDebuffs.addAll(scheduledDebuffs.values());
+
+        addDebuffs.forEach(debuff -> {
+            if (!acknowledgedDebuffs.contains(debuff)) {
+                int id = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        debuff.apply(player);
+                        scheduledDebuffs.remove(this.getTaskId());
+                        activeDebuffs.add(debuff);
+                    }
+                }.runTaskLater(TemperaturePlugin.getInstance(), debuff.getDelay()).getTaskId();
+
+                if (id != -1)
+                    scheduledDebuffs.put(id,debuff);
+                else
+                    TemperaturePlugin.getInstance().getLogger().warning("Failed to scheduled a task");
+            }
+        });
+
+        ArrayList<Debuff> removeDebuffs = DebuffRegistry.getDebuffsWithThresholdsUncrossed(prevTemp, currTemp);
+        activeDebuffs.forEach(debuff -> {
+            if (removeDebuffs.contains(debuff)) {
+                activeDebuffs.remove(debuff);
+                debuff.clear(player);
+            }
+        });
+        scheduledDebuffs.forEach((id, debuff) -> {
+            if (removeDebuffs.contains(debuff)) {
+                scheduledDebuffs.remove(id);
+                if (Bukkit.getScheduler().isQueued(id))
+                    Bukkit.getScheduler().cancelTask(id);
+                // Might need to add this in case the task ran anyway or something
+                // debuff.cleat(player);
             }
         });
     }

@@ -30,7 +30,7 @@ public class PotionEffectDebuff extends Debuff {
         if (activeEffect == null) {
             potionEffect.apply(entity);
         } else {
-            if (activeEffect.getDuration() <= this.duration)
+            if (this.duration == -1 || activeEffect.getDuration() <= this.duration)
                 potionEffect.apply(entity);
         }
     }

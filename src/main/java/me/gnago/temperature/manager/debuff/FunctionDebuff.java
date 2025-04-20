@@ -6,18 +6,18 @@ import org.bukkit.entity.LivingEntity;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public class FunctionDebuff extends Debuff {
     protected int applicationFrequency;
-    protected Function<LivingEntity,Debuff> applyFn;
-    protected Function<LivingEntity,Debuff> clearFn;
+    protected Consumer<LivingEntity> applyFn;
+    protected Consumer<LivingEntity> clearFn;
     protected HashMap<LivingEntity,Integer> repeatingDebuffIds;
     public FunctionDebuff(Collection<Double> thresholds, int delay, int duration) {
         super(thresholds, delay, duration);
     }
 
-    public FunctionDebuff setFunction(int applicationFrequency, Function<LivingEntity,Debuff> applyFn, Function<LivingEntity,Debuff> clearFn) {
+    public FunctionDebuff setFunctions(int applicationFrequency, Consumer<LivingEntity> applyFn, Consumer<LivingEntity> clearFn) {
         this.applicationFrequency = applicationFrequency;
         this.applyFn = applyFn;
         this.clearFn = clearFn;
@@ -27,10 +27,10 @@ public class FunctionDebuff extends Debuff {
     @Override
     public void apply(LivingEntity entity) {
         if (applicationFrequency <= 0) // Less than 0 means only apply once after crossing threshold
-            applyFn.apply(entity);
+            applyFn.accept(entity);
         else {
             int id = Bukkit.getScheduler().scheduleSyncRepeatingTask(TemperaturePlugin.getInstance(),
-                    () -> applyFn.apply(entity), 0, applicationFrequency);
+                    () -> applyFn.accept(entity), 0, applicationFrequency);
 
             if (id != -1)
                 repeatingDebuffIds.put(entity, id);
@@ -40,7 +40,7 @@ public class FunctionDebuff extends Debuff {
     @Override
     public void clear(LivingEntity entity) {
         if (applicationFrequency <= 0)
-            clearFn.apply(entity);
+            clearFn.accept(entity);
         else {
             Integer id = repeatingDebuffIds.get(entity);
             if (id != null && (Bukkit.getScheduler().isQueued(id) || Bukkit.getScheduler().isCurrentlyRunning(id))) {

@@ -2,6 +2,7 @@ package me.gnago.temperature.manager.file;
 
 import me.gnago.temperature.TemperaturePlugin;
 import me.gnago.temperature.manager.ClothingType;
+import me.gnago.temperature.manager.debuff.DebuffRegistry;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -61,7 +62,6 @@ public class ConfigData {
     public static HashMap<ClothingType.MaterialType,ClothingType> ClothingTypes;
 
     public static int DebuffGracePeriod;
-    public static HashMap<Double,List<String>> Debuffs;
 
     public static HashMap<TemperatureType, Double> GradualityRates;
     public enum TemperatureType {
@@ -116,12 +116,13 @@ public class ConfigData {
         ThirstMaxResist = configFile.getDouble("resistance.thirst.resistance", 0.15);
         ThirstMaxVuln = configFile.getDouble("resistance.thirst.vulnerability", 0.4);
 
-        DebuffGracePeriod = configFile.getInt("debuffs.grace_period", 30);
-        Debuffs = new HashMap<>();
+        DebuffGracePeriod = configFile.getInt("debuff_grace_period", 30);
+
+        DebuffRegistry.clearRegistry();
         configFile.getConfigurationSection("debuffs").getKeys(false).forEach(
-                key -> {
-                    Collection<String> effects = configFile.getConfigurationSection("debuffs."+key).getKeys(false);
-                    Debuffs.put(Double.parseDouble(key), new ArrayList<>(effects));
+                effect -> {
+                    Collection<Double> thresholds = configFile.getDoubleList("debuffs."+effect);
+                    DebuffRegistry.processDebuff(effect, thresholds, DebuffGracePeriod * 20);
                 });
 
         ClothingTypes = new HashMap<>();
