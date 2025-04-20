@@ -13,8 +13,8 @@ public class FunctionDebuff extends Debuff {
     protected Consumer<LivingEntity> applyFn;
     protected Consumer<LivingEntity> clearFn;
     protected HashMap<LivingEntity,Integer> repeatingDebuffIds;
-    public FunctionDebuff(Collection<Double> thresholds, int delay, int duration) {
-        super(thresholds, delay, duration);
+    public FunctionDebuff(Collection<Double> thresholds, int delay) {
+        super(thresholds, delay);
     }
 
     public FunctionDebuff setFunctions(int applicationFrequency, Consumer<LivingEntity> applyFn, Consumer<LivingEntity> clearFn) {

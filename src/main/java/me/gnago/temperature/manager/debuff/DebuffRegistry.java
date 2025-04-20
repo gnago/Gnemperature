@@ -11,7 +11,7 @@ public class DebuffRegistry {
 
     public static Debuff processDebuff(String name, Collection<Double> thresholds, int delay) {
         if (name.equalsIgnoreCase("burning")) {
-            return ((FunctionDebuff)Register(name, Debuff.New(name, thresholds, delay, -1))).setFunctions(200,
+            return ((FunctionDebuff)Register(name, Debuff.New(name, thresholds, delay))).setFunctions(200,
                 ent -> {
                     ent.setFireTicks(60); // Every 10 seconds, catch on fire for 3 seconds
                 },
@@ -19,13 +19,13 @@ public class DebuffRegistry {
                     ent.setFireTicks(0);
                 });
         } else if (name.equalsIgnoreCase("freezing")) {
-            return ((FunctionDebuff)Register(name, Debuff.New(name, thresholds, delay, -1))).setFunctions(200,
+            return ((FunctionDebuff)Register(name, Debuff.New(name, thresholds, delay))).setFunctions(200,
                     ent -> {
                         ent.setFreezeTicks(ent.getMaxFreezeTicks() + 210); // Stay frozen, reapply every 10 seconds
                     },
                     ent -> { /* do nothing, freezing will go away on its own */ });
         } else {
-            return Register(name, Debuff.New(name, thresholds, delay, -1));
+            return Register(name, Debuff.New(name, thresholds, delay));
         }
     }
 

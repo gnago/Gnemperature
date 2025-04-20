@@ -8,28 +8,26 @@ import java.util.Collection;
 public abstract class Debuff {
     protected Collection<Double> thresholds;
     protected int delay;
-    protected int duration;
 
-    public static Debuff New(String debuffName, Collection<Double> thresholds, int delay, int duration) {
+    public static Debuff New(String debuffName, Collection<Double> thresholds, int delay) {
         debuffName = debuffName.toUpperCase();
 
         String[] potionData = debuffName.split(":"); //Config format is Effect_name:amplifier
         if (potionData.length > 1)
             try {
-                return new PotionEffectDebuff(potionData[0], thresholds, delay, duration, Integer.parseInt(potionData[1]));
+                return new PotionEffectDebuff(potionData[0], thresholds, delay, Integer.parseInt(potionData[1]));
             } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
                 TemperaturePlugin.getInstance().getLogger().warning("Could not decipher Debuff as potion effect: " + debuffName);
             }
         else {
-            return new FunctionDebuff(thresholds, delay, duration);
+            return new FunctionDebuff(thresholds, delay);
         }
         return null;
     }
 
-    public Debuff(Collection<Double> thresholds, int delay, int duration) {
+    public Debuff(Collection<Double> thresholds, int delay) {
         this.thresholds = thresholds;
         this.delay = delay;
-        this.duration = duration;
     }
 
     public int getDelay() {

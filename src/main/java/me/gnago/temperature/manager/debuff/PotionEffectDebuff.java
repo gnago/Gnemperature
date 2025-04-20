@@ -10,14 +10,14 @@ import java.util.Collection;
 public class PotionEffectDebuff extends Debuff {
     private PotionEffect potionEffect;
 
-    public PotionEffectDebuff(PotionEffectType effectType, Collection<Double> thresholds, int delay, int duration, int amplifier) {
-        super(thresholds, delay, duration);
+    public PotionEffectDebuff(PotionEffectType effectType, Collection<Double> thresholds, int delay, int amplifier) {
+        super(thresholds, delay);
         if (effectType != null) {
             potionEffect = new PotionEffect(effectType, -1, amplifier, true, false, true);
         }
     }
-    public PotionEffectDebuff(String effectName, Collection<Double> thresholds, int delay, int duration, int amplifier) {
-        this(Registry.EFFECT.match(effectName.toUpperCase()), thresholds, delay, duration, amplifier);
+    public PotionEffectDebuff(String effectName, Collection<Double> thresholds, int delay, int amplifier) {
+        this(Registry.EFFECT.match(effectName.toUpperCase()), thresholds, delay, amplifier);
     }
 
     public PotionEffect getPotionEffect() {
@@ -30,7 +30,8 @@ public class PotionEffectDebuff extends Debuff {
         if (activeEffect == null) {
             potionEffect.apply(entity);
         } else {
-            if (this.duration == -1 || activeEffect.getDuration() <= this.duration)
+            // Try to avoid overwriting potion/combat granted effects
+            if (activeEffect.isAmbient())
                 potionEffect.apply(entity);
         }
     }
@@ -38,7 +39,7 @@ public class PotionEffectDebuff extends Debuff {
     @Override
     public void clear(LivingEntity entity) {
         PotionEffect activeEffect = entity.getPotionEffect(potionEffect.getType());
-        if (activeEffect != null && activeEffect.getDuration() == -1) {
+        if (potionEffect.equals(activeEffect)) {
             entity.removePotionEffect(potionEffect.getType());
         }
     }
