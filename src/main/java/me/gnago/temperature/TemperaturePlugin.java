@@ -1,17 +1,16 @@
 package me.gnago.temperature;
 
-import me.clip.placeholderapi.PlaceholderAPI;
+import me.gnago.temperature.api.PapiHelper;
 import me.gnago.temperature.api.TemperatureExpansion;
 import me.gnago.temperature.command.ShowBarCommand;
 import me.gnago.temperature.manager.file.ConfigData;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
 
 public final class TemperaturePlugin extends JavaPlugin {
 
     private static TemperaturePlugin plugin;
-    private @Nullable PlaceholderAPI placeholderAPI;
+    private PapiHelper papiHelper;
 
     @Override
     public void onEnable() {
@@ -23,6 +22,7 @@ public final class TemperaturePlugin extends JavaPlugin {
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new TemperatureExpansion().register();
+            papiHelper = new PapiHelper();
         }
 
         getLogger().info("Enabled Temperature");
@@ -32,7 +32,7 @@ public final class TemperaturePlugin extends JavaPlugin {
 
     }
 
-    public @Nullable PlaceholderAPI getPlaceholderAPI() { return placeholderAPI; }
+    public PapiHelper getPapiHelper() { return papiHelper; }
     public static TemperaturePlugin getInstance() {
         return plugin;
     }

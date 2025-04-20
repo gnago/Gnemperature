@@ -6,3 +6,6 @@ commands:
   showbaralways:
     description: Toggles whether the temperature bar is shown under any circumstance. Affects all players.
     permission: server.admin
+softdepend:
+  - "PlaceholderAPI"
+  - "ThirstBar"

@@ -1,22 +1,29 @@
-refresh_rate: 20
+refresh_rate: 20 # How often, in ticks, temperature gets recalculated
 enabled_worlds:
   - "WORLD"
   - "OVERWORLD"
-indoor_temperature: 64
-peak_temperature_time: 1400
-environment_range: 5
-in_lava_modifier: 1100
-in_water_modifier: -24
+indoor_temperature: 64 # Default Climate temperature when completely unexposed to skylight
+peak_temperature_time: 14000 # The time of day when Climate temperature is hottest (0-24000)
 weather:
   sun_protection: 0.6 # % of sun's temperature blocked by clouds during storms
   modifier: -10 # Temperature change during storms
+in_water_modifier: -24 # If you're in water, set your temperature to this. Affected by skylight exposure (e.g. Water outside will be this value, but water inside will be indoor_temperature)
+in_lava_modifier: 1100 # If you're in lava, set your temperature to this
+environment_range: 5 # How far a temperature block can be to affect a player's temperature. Higher values can cause server lag.
 activity:
   sprinting: 8
   swimming: 0
+  gliding : -3
 state:
   burning: 50
-  freezing: -50
+  freezing: -50 # In powder snow
 graduality:
+  # This section dictates how fast actual temperatures affect the player's "feels-like" temperature.
+  # The rate = % of the difference between the player's "feels-like" temperature and the actual temperature the "feels-like" temperature will increase by per update.
+  # e.g, 0.25 = 25% of the difference is covered. Please use a value between 0-1 (%/100). Use 1 if you want the change to be immediate, use 0 to disable the factor.
+  # Think of it as "what % of the effect do you feel immediately?" then it just slowly gets closer to the real temp from there (though larger % will always lead to a faster rate)
+  # Use this graph to help visualize your numbers https://www.desmos.com/calculator/rv6lg0hwbg
+  # TL;DR The closer to 1 the rate is, the faster the change will be.
   climate: 0.12
   environment: 0.15
   water: 0.75
@@ -25,16 +32,21 @@ graduality:
   activity: 0.02
   state: 0.8
 wetness:
-  modifier: -16
-  max: 60
-  increment: 5
-  decrement: 1
-  enable_degradation: true
+  modifier: -16 # Temperature difference when player is wet
+  max: 60 # Determines how long it takes for a player to fully dry off
+  increment: 5 # How much "wetness" a player accumulates per refresh while in water/rain
+  decrement: 1 # How much "wetness" a player loses per refresh while outside of water/rain (drying off)
+  enable_degradation: true # If true, only a percentage of the modifier will be applied. Based off of player's "wetness"/max
 resistance:
+  # INFO: Resistance Factor Format
+  # [-1,0[ = resist cold temperatures by absolute value * 100 % (e.g. -0.7 will resist 70% of the cold)
+  # ]0,1] = resist hot temperatures by value * 100 % (e.g. 0.7 will resist 70% of the heat)
+  # ]1,2] = resist all temperatures by 1 - value * 100 % (e.g. 1.7 will resist 70% of hot and cold)
   ideal: 75 # The more you resist, the closer to this temperature you get (In Fahrenheit)
-  potion_effects: # The maximum and minimum you will ever reach while resisting temperature with potions
-    max_temperature: 90
+  potion_effects:
+    max_temperature: 90 # The maximum and minimum you will ever reach while resisting temperature with potions
     min_temperature: 10
+    exclude_turtle_helmet_effect: true # Whether Water Breathing from the turtle helmet should be ignored when resisting temperature
     list:
       fire_resistance: 0.7
       night_vision: -0.7
@@ -43,15 +55,15 @@ resistance:
     list:
       fire_protection: 0.02
   hunger:
-    midpoint: 3.5
-    resistance: 0.15
-    vulnerability: 0.4
-  thirst:
-    midpoint: 3.5
+    midpoint: 7 # Out of 20
+    resistance: 0.15 # This does NOT use the standard Resistance factor format. 0.15 = Resist 15% at max hunger
+    vulnerability: 0.4 # 0.4 = Temperature is 40% more severe at 0 hunger
+  thirst: # Requires Vanderis' ThirstBar plugin
+    midpoint: 40
     resistance: 0.15
     vulnerability: 0.4
 debuffs:
-  grace_period: 30
+  grace_period: 30 # How many refreshes it takes to apply a debuff after reaching the temperature threshold
   140:
     - "BURNING"
   129:
@@ -74,7 +86,7 @@ debuffs:
 clothing:
   default:
     warmth: 2
-    resistance: -0.025
+    resistance: -0.025 # Uses Resistance Factor Format
   leather:
     warmth: 5
     resistance: -0.3

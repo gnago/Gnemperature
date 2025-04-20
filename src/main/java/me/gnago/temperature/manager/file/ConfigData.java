@@ -21,14 +21,15 @@ public class ConfigData {
     public static double IndoorTemperature;
     public static double PeakTemperatureTime;
 
-    public static int EnvironmentRange;
-    public static double InLavaModifier;
-    public static double InWaterModifier;
     public static double CloudyResistFactor;
     public static double CloudyModifier;
+    public static double InWaterModifier;
+    public static double InLavaModifier;
+    public static int EnvironmentRange;
 
     public static double SprintingModifier;
     public static double SwimmingModifier;
+    public static double GlidingModifier;
     public static double BurningModifier;
     public static double FreezingModifier;
 
@@ -54,6 +55,7 @@ public class ConfigData {
     public static HashMap<Material,Double> ItemTemperatures;
 
     public static HashMap<PotionEffect,Double> ResistanceEffects;
+    public static boolean ExcludeTurtleHelmetEffect;
 
     public static HashMap<Enchantment,Double> ResistanceEnchantments;
     public static HashMap<ClothingType.MaterialType,ClothingType> ClothingTypes;
@@ -77,13 +79,14 @@ public class ConfigData {
         EnabledWorlds = configFile.getStringList("enabled_worlds");
         IndoorTemperature = configFile.getDouble("indoor_temperature", 64);
         PeakTemperatureTime = configFile.getInt("peak_temperature_time", 1400);
-        EnvironmentRange = configFile.getInt("environment_range", 5);
-        InLavaModifier = configFile.getDouble("in_lava_modifier", 1100);
-        InWaterModifier = configFile.getDouble("in_water_modifier", -24);
         CloudyResistFactor = configFile.getDouble("weather.sun_protection", 0.6);
         CloudyModifier = configFile.getDouble("weather.modifier", -10);
+        InWaterModifier = configFile.getDouble("in_water_modifier", -24);
+        InLavaModifier = configFile.getDouble("in_lava_modifier", 1100);
+        EnvironmentRange = configFile.getInt("environment_range", 5);
         SprintingModifier = configFile.getDouble("activity.sprinting", 8);
         SwimmingModifier = configFile.getDouble("activity.swimming", 0);
+        GlidingModifier = configFile.getDouble("activity.gliding", 0);
         BurningModifier = configFile.getDouble("state.burning", 50);
         FreezingModifier = configFile.getDouble("state.freezing", -50);
 
@@ -130,6 +133,8 @@ public class ConfigData {
                     configFile.getDouble("clothing." + matName + ".warmth"),
                     configFile.getDouble("clothing." + matName + ".resistance")));
         }
+
+        ExcludeTurtleHelmetEffect = configFile.getBoolean("resistance.potion_effects.exclude_turtle_helmet_effect", true);
         ResistanceEffects = new HashMap<>();
         configFile.getConfigurationSection("resistance.potion_effects.list").getKeys(false).forEach(
                 key -> {

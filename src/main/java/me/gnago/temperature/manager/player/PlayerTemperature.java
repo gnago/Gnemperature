@@ -1,5 +1,7 @@
 package me.gnago.temperature.manager.player;
 
+import me.gnago.temperature.TemperaturePlugin;
+import me.gnago.temperature.api.PapiHelper;
 import me.gnago.temperature.manager.ClothingType;
 import me.gnago.temperature.manager.TemperatureMethods;
 import me.gnago.temperature.manager.file.ConfigData;
@@ -8,15 +10,22 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 public class PlayerTemperature implements PlayerMethods {
     private double feelsLike;
     private double actuallyIs;
     private double wetness;
+
     private final Player player;
 
     public PlayerTemperature(Player player) {
         this.player = player;
+        this.actuallyIs = ConfigData.IdealTemperature;
+        this.feelsLike = this.actuallyIs;
     }
 
     @Override
@@ -109,18 +118,13 @@ public class PlayerTemperature implements PlayerMethods {
 
     @Override
     public double calcEnvironmentTemp() {
-        // You cannot reassign external variables from within a lambda. Use this class to hold them.
-        class EnvValues {
-            public double temp = 0;
-            public double max = 0;
-            public double min = 0;
-            public double inverseDiminishRatio = 0;
-        }
-        EnvValues envValues = new EnvValues();
-
+        // Need to use atomic as wrappers since local variables in lambdas need to be effectively final
+        AtomicReference<Double> aTemp = new AtomicReference<>(0.0);
+        AtomicReference<Double> aMax = new AtomicReference<>(0.0);
+        AtomicReference<Double> aMin = new AtomicReference<>(0.0);
         if (player.getLocation().getBlock().getType() == Material.LAVA || player.getLocation().getBlock().getType() == Material.LAVA_CAULDRON) {
-            envValues.temp = ConfigData.InLavaModifier;
-            envValues.max = envValues.temp;
+            aTemp.set(ConfigData.InLavaModifier);
+            aMax.set(aTemp.get());
         } else {
             TemperatureMethods.forEachBlockInRadius(player.getLocation(), ConfigData.EnvironmentRange, true, block -> {
                 if (block.getType() != Material.AIR) {
@@ -145,31 +149,31 @@ public class PlayerTemperature implements PlayerMethods {
                         // This is to ensure that things don't get too intense if there's a lot of temperature blocks in the area.
                         // So set max/min temps to be only a multiple of the strength of the hottest/coldest block's base temperature.
                         double blockTempLimit = distTemp * 2;
-                        if (blockTempLimit > envValues.max)
-                            envValues.max = blockTempLimit;
-                        if (blockTempLimit < envValues.min)
-                            envValues.min = blockTempLimit;
+                        if (blockTempLimit > aMax.get())
+                            aMax.set(blockTempLimit);
+                        if (blockTempLimit < aMin.get())
+                            aMin.set(blockTempLimit);
 
                         // Check for obstructions
-                        envValues.inverseDiminishRatio = 1;
+                        AtomicReference<Double> aInverseDiminishRatio = new AtomicReference<>(1.0);
                         TemperatureMethods.forEachBlockBetween(player.getLocation().add(0, 1, 0), block.getLocation(), obstructingBlock -> {
                             // Blocks can block temperature only if they are solid and don't have air gaps
                             if (obstructingBlock != block &&
                                 obstructingBlock.getType().isSolid() &&
                                 TemperatureMethods.isFullBlock(obstructingBlock)) {
-                                envValues.inverseDiminishRatio *= 0.5;
+                                aInverseDiminishRatio.set(aInverseDiminishRatio.get() * 0.5);
                             }
                             return false;
                         });
-                        envValues.temp += distTemp * envValues.inverseDiminishRatio;
+                        aTemp.set(aTemp.get() + distTemp * aInverseDiminishRatio.get());
                     }
                 }
                 return false;
             });
         }
 
-        envValues.temp = Math.max(Math.min(envValues.temp, envValues.max), envValues.min);
-        return envValues.temp;
+        aTemp.set(Math.max(Math.min(aTemp.get(), aMax.get()), aMin.get()));
+        return aTemp.get();
     }
 
     @Override
@@ -179,6 +183,8 @@ public class PlayerTemperature implements PlayerMethods {
             temp += ConfigData.SprintingModifier;
         if (player.isSwimming())
             temp += ConfigData.SwimmingModifier;
+        if (player.isGliding())
+            temp += ConfigData.GlidingModifier;
         return temp;
     }
 
@@ -213,6 +219,7 @@ public class PlayerTemperature implements PlayerMethods {
                             addTemp *= 1.2;
 
                         temp += addTemp;
+                        break;
                     }
                 }
         }
@@ -221,21 +228,73 @@ public class PlayerTemperature implements PlayerMethods {
 
     @Override
     public double applyClothingResistance(double temp) {
-        return 0;
+        AtomicReference<Double> aTemp = new AtomicReference<>(temp);
+        for (ItemStack armour : player.getInventory().getArmorContents()) {
+            for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
+                if (ClothingType.ArmourMaterials.get(mat).contains(armour.getType())) {
+                    aTemp.set(TemperatureMethods.calcResist(temp, ConfigData.ClothingTypes.get(mat).resistance));
+                    break;
+                }
+            }
+            ConfigData.ResistanceEnchantments.forEach((enchant, res) -> {
+                if (armour.containsEnchantment(enchant)) {
+                    aTemp.set(TemperatureMethods.calcResist(aTemp.get(), res, armour.getEnchantmentLevel(enchant)));
+                }
+            });
+        }
+        return aTemp.get();
     }
 
     @Override
     public double applyCareResistance(double temp) {
-        return 0;
+        // Hunger
+        temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.HungerMidPoint, 20,
+                player.getFoodLevel(), ConfigData.HungerMaxResist, ConfigData.HungerMaxVuln));
+
+        PapiHelper papi = TemperaturePlugin.getInstance().getPapiHelper();
+        if (papi != null) { // If PlaceholderAPI was enabled on startup
+            if (papi.placeholderExists(player,"%thirstbar_isDisabled%")) { // This soft-checks that the server has the ThirstBar plugin
+                if (!Boolean.parseBoolean(papi.getPlaceholderString(player, "%thirstbar_isDisabled%"))) { // Check if enabled
+                    try {
+                        double thirstLevel = papi.getPlaceholderDouble(player, "%thirstbar_current_int%");
+                        double thirstMax = papi.getPlaceholderDouble(player, "%thirstbar_max_int%");
+                        temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.ThirstMidPoint, thirstMax,
+                                thirstLevel, ConfigData.ThirstMaxResist, ConfigData.ThirstMaxVuln));
+                    } catch (NumberFormatException e) {
+                        TemperaturePlugin.getInstance().getLogger().log(Level.WARNING, "Failed to retrieve ThirstBar Placeholders");
+                    }
+                }
+            }
+        }
+
+        return temp;
+    }
+    private double calcCareResistance(double midpoint, double max, double currVal, double res, double vuln) {
+        if (currVal > midpoint)
+            return 1 - (res * (currVal - midpoint)/(max - midpoint));
+        else
+            return 1 + (vuln * (midpoint - currVal)/midpoint);
     }
 
     @Override
     public double applyEffectResistance(double temp) {
-        return 0;
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            if (!ConfigData.ExcludeTurtleHelmetEffect ||
+                effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
+                temp = TemperatureMethods.calcResist(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier());
+            }
+        }
+        return Math.max(Math.min(temp, ConfigData.ResistTemperatureMax), ConfigData.ResistTemperatureMin);
     }
 
     @Override
-    public void applyDebuffs(double temp) {
-
+    public void applyDebuffs() {
+        ConfigData.Debuffs.forEach((threshold, debuffs) -> {
+            if (threshold > ConfigData.IdealTemperature) { // Hot debuff
+                if (feelsLike >= threshold) {
+                    
+                }
+            }
+        });
     }
 }

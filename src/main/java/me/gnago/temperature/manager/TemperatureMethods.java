@@ -40,10 +40,13 @@ public class TemperatureMethods {
                 resistPercent = Math.pow(1 - resistFactor, amplifier);
         }
 
-        return (initTemp - ConfigData.IdealTemperature) * resistPercent + ConfigData.IdealTemperature;
+        return calcResistBasic(initTemp, resistPercent);
     }
     public static double calcResist(double initTemp, double resistFactor) {
         return calcResist(initTemp, resistFactor, 1);
+    }
+    public static double calcResistBasic(double initTemp, double resistPercent) {
+        return (initTemp - ConfigData.IdealTemperature) * resistPercent + ConfigData.IdealTemperature;
     }
 
     /**

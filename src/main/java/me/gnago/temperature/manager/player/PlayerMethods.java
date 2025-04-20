@@ -13,5 +13,5 @@ public interface PlayerMethods {
     double applyClothingResistance(double temp);
     double applyCareResistance(double temp);
     double applyEffectResistance(double temp);
-    void applyDebuffs(double temp);
+    void applyDebuffs();
 }
