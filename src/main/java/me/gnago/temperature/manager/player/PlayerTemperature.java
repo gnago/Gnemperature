@@ -3,6 +3,7 @@ package me.gnago.temperature.manager.player;
 import me.gnago.temperature.TemperaturePlugin;
 import me.gnago.temperature.api.PapiHelper;
 import me.gnago.temperature.manager.ClothingType;
+import me.gnago.temperature.manager.Temperature;
 import me.gnago.temperature.manager.TemperatureMethods;
 import me.gnago.temperature.manager.debuff.Debuff;
 import me.gnago.temperature.manager.debuff.DebuffRegistry;
@@ -21,24 +22,28 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PlayerTemperature implements PlayerMethods {
-    private double feelsLike;
-    private double actuallyIs;
+public class PlayerTemperature implements PlayerMethods, PlayerSettings {
+    private final Temperature feelsLike;
+    private final Temperature actuallyIs;
     private double wetness;
-    private HashMap<Integer,Debuff> scheduledDebuffs;
-    private ArrayList<Debuff> activeDebuffs;
+    private final HashMap<Integer,Debuff> scheduledDebuffs;
+    private final ArrayList<Debuff> activeDebuffs;
 
     private final Player player;
 
     public PlayerTemperature(Player player) {
         this.player = player;
-        this.actuallyIs = ConfigData.IdealTemperature;
-        this.feelsLike = this.actuallyIs;
+        this.actuallyIs = new Temperature();
+        this.feelsLike = this.actuallyIs.copy();
+        this.scheduledDebuffs = new HashMap<>();
+        this.activeDebuffs = new ArrayList<>();
     }
 
     @Override
     public void calcTemperature() {
-
+        actuallyIs.set(new Temperature(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp()));
+        feelsLike.approach(actuallyIs);
+        feelsLike.resist(applyEffectResistance(applyClothingResistance(applyCareResistance(1))));
     }
 
     @Override
@@ -219,7 +224,7 @@ public class PlayerTemperature implements PlayerMethods {
         // Can probably optimize this...
         for (ItemStack armour : player.getInventory().getArmorContents()) {
                 for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
-                    if (ClothingType.ArmourMaterials.get(mat).contains(armour.getType())) {
+                    if (mat.getPieces().contains(armour.getType())) {
                         double addTemp = ConfigData.ClothingTypes.get(mat).warmth;
                         if (armour.getType().getEquipmentSlot() == EquipmentSlot.CHEST)
                             addTemp *= 1.6;
@@ -239,7 +244,7 @@ public class PlayerTemperature implements PlayerMethods {
         AtomicReference<Double> aTemp = new AtomicReference<>(temp);
         for (ItemStack armour : player.getInventory().getArmorContents()) {
             for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
-                if (ClothingType.ArmourMaterials.get(mat).contains(armour.getType())) {
+                if (mat.getPieces().contains(armour.getType())) {
                     aTemp.set(TemperatureMethods.calcResist(temp, ConfigData.ClothingTypes.get(mat).resistance));
                     break;
                 }

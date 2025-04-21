@@ -22,17 +22,21 @@ public class ClothingType {
         DefaultResistance = resistance;
     }
 
-    public static final HashMap<MaterialType, Collection<Material>> ArmourMaterials = new HashMap<MaterialType, Collection<Material>>() {{
-        put(MaterialType.LEATHER, Arrays.asList(Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE, Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS));
-        put(MaterialType.CHAINMAIL, Arrays.asList(Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS));
-        put(MaterialType.IRON, Arrays.asList(Material.IRON_HELMET, Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS, Material.IRON_BOOTS));
-        put(MaterialType.TURTLE, Collections.singletonList(Material.TURTLE_HELMET));
-        put(MaterialType.GOLDEN, Arrays.asList(Material.GOLDEN_HELMET, Material.GOLDEN_CHESTPLATE, Material.GOLDEN_LEGGINGS, Material.GOLDEN_BOOTS));
-        put(MaterialType.DIAMOND, Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS));
-        put(MaterialType.NETHERITE, Arrays.asList(Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS));
-    }};
-
     public enum MaterialType {
-        LEATHER, CHAINMAIL, IRON, TURTLE, GOLDEN, DIAMOND, NETHERITE
+        LEATHER(Arrays.asList(Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE, Material.LEATHER_LEGGINGS, Material.LEATHER_BOOTS)),
+        CHAINMAIL(Arrays.asList(Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, Material.CHAINMAIL_LEGGINGS, Material.CHAINMAIL_BOOTS)),
+        IRON(Arrays.asList(Material.IRON_HELMET, Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS, Material.IRON_BOOTS)),
+        TURTLE(Collections.singletonList(Material.TURTLE_HELMET)),
+        GOLDEN(Arrays.asList(Material.GOLDEN_HELMET, Material.GOLDEN_CHESTPLATE, Material.GOLDEN_LEGGINGS, Material.GOLDEN_BOOTS)),
+        DIAMOND(Arrays.asList(Material.DIAMOND_HELMET, Material.DIAMOND_CHESTPLATE, Material.DIAMOND_LEGGINGS, Material.DIAMOND_BOOTS)),
+        NETHERITE(Arrays.asList(Material.NETHERITE_HELMET, Material.NETHERITE_CHESTPLATE, Material.NETHERITE_LEGGINGS, Material.NETHERITE_BOOTS));
+
+        private final Collection<Material> pieces;
+        MaterialType(Collection<Material> pieces) {
+            this.pieces = pieces;
+        }
+        public Collection<Material> getPieces() {
+            return pieces;
+        }
     }
 }

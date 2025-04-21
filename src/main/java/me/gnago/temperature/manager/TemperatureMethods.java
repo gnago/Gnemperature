@@ -14,10 +14,6 @@ public class TemperatureMethods {
     public static double fahrToCel(double fahr) {
         return (fahr-32)*5/9;
     }
-    public static double calcLogGradual(double current, double target, double rate) {
-        double change = (target - current) * rate;
-        return current + change;
-    }
     public static double getBiomeTemp(Block block) {
         // Dry biomes (desert, savannah, badlands) have a base temp of 2.
         // This is a weird jump from the base temp of 1 of jungles and stony peaks.

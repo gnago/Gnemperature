@@ -2,6 +2,7 @@ package me.gnago.temperature.manager.file;
 
 import me.gnago.temperature.TemperaturePlugin;
 import me.gnago.temperature.manager.ClothingType;
+import me.gnago.temperature.manager.Temperature;
 import me.gnago.temperature.manager.debuff.DebuffRegistry;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -12,11 +13,12 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
 
 public class ConfigData {
     public static int RefreshRate;
-    public static List<String> EnabledWorlds;
+    public static Collection<String> EnabledWorlds;
     //Add thermometer config
 
     public static double IndoorTemperature;
@@ -63,11 +65,6 @@ public class ConfigData {
 
     public static int DebuffGracePeriod;
 
-    public static HashMap<TemperatureType, Double> GradualityRates;
-    public enum TemperatureType {
-        CLIMATE, WATER, ENVIRONMENT, CLOTHING, TOOL, ACTIVITY, STATE
-    }
-
     private final FileConfiguration configFile;
     private final FileConfiguration materialsFile;
 
@@ -90,14 +87,16 @@ public class ConfigData {
         BurningModifier = configFile.getDouble("state.burning", 50);
         FreezingModifier = configFile.getDouble("state.freezing", -50);
 
-        GradualityRates = new HashMap<>();
-        GradualityRates.put(TemperatureType.CLIMATE, configFile.getDouble("graduality.climate",0.12));
-        GradualityRates.put(TemperatureType.ENVIRONMENT, configFile.getDouble("graduality.environment",0.15));
-        GradualityRates.put(TemperatureType.WATER, configFile.getDouble("graduality.water",0.75));
-        GradualityRates.put(TemperatureType.CLOTHING, configFile.getDouble("graduality.clothing",0.25));
-        GradualityRates.put(TemperatureType.TOOL, configFile.getDouble("graduality.tool",0.7));
-        GradualityRates.put(TemperatureType.ACTIVITY, configFile.getDouble("graduality.activity",0.02));
-        GradualityRates.put(TemperatureType.STATE, configFile.getDouble("graduality.state",0.8));
+        Temperature.setGradualityRates(new Temperature(
+                configFile.getDouble("graduality.climate",0.12),
+                configFile.getDouble("graduality.water",0.75),
+                1, // Wetness is instant since it has its own custom graduality functionality
+                configFile.getDouble("graduality.environment",0.15),
+                configFile.getDouble("graduality.clothing",0.25),
+                configFile.getDouble("graduality.tool",0.7),
+                configFile.getDouble("graduality.activity",0.02),
+                configFile.getDouble("graduality.state",0.8)
+        ));
 
         WetnessModifier = configFile.getDouble("wetness.modifier", -16);
         WetnessMax = configFile.getDouble("wetness.max", 60);
