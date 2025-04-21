@@ -1,0 +1,999 @@
+#########################################################
+#########################################################
+#########################################################
+#####   ____ ___  _   _ _____ _    _   ___  __      #####
+#####  / ___/ _ \| \ | |  ___| |  | | | \ \/ /      #####
+##### | |  | | | |  \| | |_  | |  | | | |\  /       #####
+##### | |__| |_| | |\  |  _| | |__| |_| |/  \       #####
+#####  \____\___/|_| \_|_| __|_____\___//_/\_\___   #####
+##### / ___|| ____|  / \  / ___| / _ \| \ | / ___|  #####
+##### \___ \|  _|   / _ \ \___ \| | | |  \| \___ \  #####
+#####  ___) | |___ / ___ \ ___) | |_| | |\  |___) | #####
+##### |____/|_____/_/   \_\____/ \___/|_| \_|____/  #####
+#####                                               #####
+#########################################################
+#########################################################
+#########################################################
+
+options:
+    tempRefreshRate: 20 # In ticks
+    enabledWorlds: "world", and "seasons-desert"
+    thermometerType: {seasons.customItems::thermometer}
+
+    debuffGracePeriod: 33 # The amount of seconds someone can be past the temperature threshold before suffering from debuffs
+    
+    caveAndIndoorTemp: 64 # In Fahrenheit
+    #sunlightModifier: 2 # How strong shade/lack of sun level is. The higher, the more each lack of sky light level brings the player closer to caveAndIndoorTemp. DO NOT SET TO 0 !!! https://www.desmos.com/calculator/7cythjt1ib
+    timePeakTempTime: 1400 # Time of day when the temperature is highest
+    environmentRange: 5 # Range where blocks will affect the player's temperature
+    inWaterModifier: -24 # How much colder water is at the surface
+    cloudResistFactor: 0.6 # % that clouds (storms) will resist heat from the sun
+    cloudModifier: -10 # Temperature difference clouds make, regardless of biome humidity and temperature
+    
+    ### Activity / State Temps ###
+    sprintingTemp: 8 # While sprinting
+    swimmingTemp: 0 # While swimming (You can only swim if you are also sprinting, so this in in ADDITION to sprintingTemp)
+    burningTemp: 50 # From lava/fire/fire arrow/etc
+    freezingTemp: -50 # In Powder snow
+    
+    ### Gradualality Rates ###
+    # This section dictates how fast actual temperatures affect the player's "feels-like" temperature.
+    # The rate = % of the difference between the player's "feels-like" temperature and the actual temperature the "feels-like" temperature will increase by per update. e.g, 0.25 = 25% of the difference is covered. Please use a value between 0-1 (%/100). Use 1 if you want the change to be immediate, use 0 to disable the factor.
+    # Think of it as "what % of the effect do you feel immediately?" then it just slowly gets closer to the real temp from there (though larger % will always lead to a faster rate)
+    # Use this graph to help visualize your numbers https://www.desmos.com/calculator/rv6lg0hwbg
+    
+    sunlightRate: 0.12
+    waterRate: 0.75
+    environmentRate: 0.15
+    clothingRate: 0.25
+    heldItemRate: 0.7
+    activityRate: 0.02
+    stateRate: 0.8
+    
+    ### Wetness Variable ###
+    # Wetness determines how long after exiting water/rain a player will continue to feel effects of being wet
+    # Does NOT stack with being in water, only gets applied when leaving water or in rain.
+    maxWetness: 60 # How wet a player can become
+    wetSpeed: 5 # How many wet points are added to the player per loop until they reach maxWetness
+    drySpeed: 1 # How quickly players lose wet points until wetness is 0
+    wetnessTemp: -16 # Temperature change when wet
+    useWetnessTempDegradation: 1 # temp change from being wet = wetnessTemp * wetness level/maxWetness. 0 for false, 1 for true
+    
+    ### Resisting ###
+    idealTemp: 75 # This is used as the target temperature when resisting. The more you resist, the closer you get to idealTemp
+    minTempWhileResisting: 10
+    maxTempWhileResisting: 90
+
+    # Hunger Resisting #
+    hungerMidPoint: 3.5 # out of 10
+    hungerMaxResistanceAmt: 0.15
+    hungerMaxVulnAmt: 0.4
+    
+    # Thirst Resisting #
+    thirstMidPoint: 40 # out of 100
+    thirstMaxResistanceAmt: 0.15
+    thirstMaxVulnAmt: 0.4
+
+function tempBlocksConfig():
+    delete {temp.blocks::*}
+    # Set temperature values for temperature blocks
+    # These numbers are the maximum that your temperature can increase by being around them. Realistically being around one of these blocks will change your temperature by about 1/4 of the amount
+    set {temp.blocks::lava} to 50
+    set {temp.blocks::lava cauldron} to 46
+    set {temp.blocks::soul campfire} to 30
+    set {temp.blocks::campfire} to 26
+    set {temp.blocks::fire} to 26
+    set {temp.blocks::magma block} to 21
+    set {temp.blocks::furnace} to 20
+    set {temp.blocks::blast furnace} to 20
+    set {temp.blocks::smoker} to 20
+    set {temp.blocks::brewing stand} to 6.4
+    set {temp.blocks::soul torch} to 5
+    set {temp.blocks::soul wall torch} to {temp.blocks::soul torch}
+    set {temp.blocks::soul lantern} to 4
+    set {temp.blocks::torch} to 3.5
+    set {temp.blocks::wall torch} to {temp.blocks::torch}
+    set {temp.blocks::lantern} to 2.5
+    set {temp.blocks::jack o lantern} to 2.2
+    set {temp.blocks::candle} to 1.25
+    set {temp.blocks::torchflower} to 1.1
+    set {temp.blocks::beacon} to 1.8
+    set {temp.blocks::glowstone} to 1.1
+    set {temp.blocks::creaking heart} to 0.6
+    set {temp.blocks::redstone block} to 2.8
+    set {temp.blocks::redstone torch} to 1.6
+    set {temp.blocks::redstone wall torch} to {temp.blocks::redstone torch}
+    set {temp.blocks::redstone lamp} to 1.6
+    set {temp.blocks::redstone ore} to 1.2
+    set {temp.blocks::deepslate redstone ore} to {temp.blocks::redstone ore}
+    set {temp.blocks::wet sponge} to -0.8
+    set {temp.blocks::water} to -1.5
+    set {temp.blocks::snow} to -3
+    set {temp.blocks::snow block} to -6
+    set {temp.blocks::powder snow cauldron} to -16
+    set {temp.blocks::powder snow} to -24
+    set {temp.blocks::ice} to -9
+    set {temp.blocks::packed ice} to -18
+    set {temp.blocks::blue ice} to -36
+
+function tempItemsConfig():
+    delete {temp.items::*}
+    # Set temperature values for temperature blocks
+    # These numbers are the maximum that your temperature can increase by being around them. Realistically being around one of these blocks will change your temperature by about 1/4 of the amount
+    set {temp.items::lava bucket} to 18
+    set {temp.items::magma block} to 10
+    set {temp.items::soul torch} to 5
+    set {temp.items::soul lantern} to 4
+    set {temp.items::torch} to 4
+    set {temp.items::lantern} to 3
+    set {temp.items::jack o lantern} to 3
+    set {temp.items::fire charge} to 2.5
+    set {temp.items::brewing stand} to 1.2
+    set {temp.items::blaze rod} to 1.25
+    set {temp.items::blaze powder} to 1
+    set {temp.items::magma cream} to 0.75
+    set {temp.items::torchflower} to 0.25
+    set {temp.items::glowstone} to 0.25
+    set {temp.items::redstone block} to 0.5
+    set {temp.items::redstone torch} to 1.5
+    set {temp.items::redstone ore} to 0.25
+    set {temp.items::deepslate redstone ore} to 0.25
+    set {temp.items::tnt block} to 0.75 #Nervously holds
+    set {temp.items::minecart with tnt} to 0.75 #Nervously holds
+    set {temp.items::end crystal} to 0.75 #Nervously holds
+    set {temp.items::wind charge} to -0.25
+    set {temp.items::breeze rod} to -0.5
+    set {temp.items::wet sponge} to -0.75
+    set {temp.items::milk bucket} to -1.25
+    set {temp.items::snowball} to -2.5
+    set {temp.items::snow} to -4
+    set {temp.items::snow block} to -6
+    set {temp.items::powder snow bucket} to -5
+    set {temp.items::ice} to -6
+    set {temp.items::packed ice} to -12
+    set {temp.items::blue ice} to -24
+
+function tempResistanceEffectsConfig():
+    delete {temp.resistanceEffects::*}
+    # Potion effects that resist temperature
+    # [-1,0[ = resist cold temperatures by absolute value * 100 % (e.g. -0.7 will resist 70% of the cold)
+    # ] 0,1] = resist hot temperatures by value * 100 % (e.g. 0.7 will resist 70% of the heat)
+    # ] 1,2] = resist all temperatures by 1 - value * 100 % (e.g. 1.7 will resist 70% of hot and cold)
+    set {temp.resistanceEffects::fire resistance} to 0.7
+    set {temp.resistanceEffects::night vision} to -0.7
+    set {temp.resistanceEffects::resistance} to 1.55
+
+function tempClothingConfig():
+    delete {temp.clothingWarmth::*}
+    delete {temp.resistanceClothing::*}
+    delete {temp.resistanceEnchants::*}
+    
+    set {temp.clothingWarmth.default} to 2
+    set {temp.clothingWarmth::leather} to 5
+    set {temp.clothingWarmth::chainmail} to 0
+    set {temp.clothingWarmth::golden} to 1.7
+    
+    set {temp.resistanceClothing.default} to -0.025 # Default full armour will reisist 10% of cold
+    set {temp.resistanceClothing::leather} to -0.3 # Full leather will resist ~76% of cold (1 - 0.7^4)
+    set {temp.resistanceClothing::chainmail} to 0
+    
+    set {temp.resistanceEnchants::fire protection} to 0.02 # Full Fire Prot IV armor will resist ~25% of heat (1 - 0.98^16)
+
+function tempDebuffsConfig():
+    delete {temp.debuffs::*}
+    # Debuffs
+    # Use format "#,#" if there are two thresholds for the same effect
+    set {temp.debuffs::burn} to 140
+    set {temp.debuffs::blindness,1} to 129
+    set {temp.debuffs::nausea,1} to 124
+    set {temp.debuffs::hunger,1} to 108
+    
+    set {temp.debuffs::weakness,1} to 29
+    set {temp.debuffs::slowness,1} to 41
+    set {temp.debuffs::mining fatigue,1} to -13
+    set {temp.debuffs::slowness,2} to -22
+    set {temp.debuffs::darkness,1} to -22
+    set {temp.debuffs::freeze} to -32
+
+
+#################################### -- CONFIG ENDS HERE -- ###########################################################################################################################
+on load:
+    tempBlocksConfig()
+    tempItemsConfig()
+    tempClothingConfig()
+    tempResistanceEffectsConfig()
+    tempDebuffsConfig()
+    
+    #reset the loop
+    set {temp.enabled} to false
+    wait "%{@tempRefreshRate} + 1% ticks" parsed as timespan
+    set {temp.enabled} to true
+    startTemperatureLoop()
+
+
+#######################################
+# MAIN LOOP / TOTALS / DISPLAY
+#######################################
+
+# Main loop
+function startTemperatureLoop():
+    while {temp.enabled} is true:
+        loop all players where [{@enabledWorlds} contains input's world]:
+            calcPlayerTemp(loop-player)
+            set {_actualTemp} to {temp.players.%loop-player%.actualTemp.total}
+            set {_feelTemp} to {temp.players.%loop-player%.feelTemp.total}
+            
+            ### Debuffs
+            if {temp.players.%loop-player%.debugModeOn.debuffs} is not false:
+                getDebuffs(loop-player,{_feelTemp})
+
+            ### Display
+            # Check if player's settings let temperature be displayed from inventory thermometer
+            if all:
+                {temp.players.%loop-player%.showFromInventory} is set
+                loop-player's inventory has {@thermometerType}
+            then:
+                set {_displayTempNotHolding} to true
+            else:
+                set {_displayTempNotHolding} to false
+
+            # Check all conditions
+            if any:
+                {temp.alwaysShowTempBar} is set
+                {_displayTempNotHolding} is true
+                loop-player's tool is of type {@thermometerType}
+                loop-player's off hand tool is of type {@thermometerType}
+            then:
+                setPlaceholder(loop-player, "usedthermometer", true)
+                tempshowbar(loop-player, true)
+            else:
+                tempshowbar(loop-player, false)
+            
+            if {temp.players.%loop-player%.bossbar} is set:
+                set {_displayTemp} to "%{_feelTemp}% °F"
+                if {temp.players.%loop-player%.showActual} is set:
+                    add " / %{_actualTemp}% °F" to {_displayTemp}
+                if {temp.players.%loop-player%.useCelcius} is set:
+                    set {_displayTemp} to "%FahrToCel({_feelTemp})% °C"
+                    if {temp.players.%loop-player%.showActual} is set:
+                        add " / %FahrToCel({_actualTemp})% °C" to {_displayTemp}
+                set bar title of {temp.players.%loop-player%.bossbar} to "%{_displayTemp}%"
+            
+            if {_feelTemp} is greater than 180:
+                set bar color of {temp.players.%loop-player%.bossbar} to pink
+            else if {_feelTemp} is greater than 120:
+                set bar color of {temp.players.%loop-player%.bossbar} to red
+            else if {_feelTemp} is greater than 80:
+                set bar color of {temp.players.%loop-player%.bossbar} to yellow
+            else if {_feelTemp} is greater than 55:
+                set bar color of {temp.players.%loop-player%.bossbar} to green
+            else if {_feelTemp} is greater than 32:
+                set bar color of {temp.players.%loop-player%.bossbar} to blue
+            else if {_feelTemp} is greater than -40:
+                set bar color of {temp.players.%loop-player%.bossbar} to white
+            else:
+                set bar color of {temp.players.%loop-player%.bossbar} to purple
+            
+            if {temp.players.%loop-player%.debugModeOn} is set:
+                set title of loop-player's fastboard to "&3Temperature Factors&r (f/a)"
+                set line 1 of loop-player's fastboard to "&7Biome Temp/Hum:&r %getBiomeTemp(loop-player)%/%getBiomeHumidity(loop-player)%"
+                set line 2 of loop-player's fastboard to "&7Time Temp:&r %getTime(loop-player)%: %calcTimeHeat(getTime(loop-player), getBiomeTemp(loop-player), getBiomeHumidity(loop-player))%"
+                set line 3 of loop-player's fastboard to "&7Sunlight:&r %skylight level at loop-player%: %{temp.players.%loop-player%.feelTemp.sunlightTemp}%/%{temp.players.%loop-player%.actualTemp.sunlightTemp}%"
+                set line 4 of loop-player's fastboard to "&7Water:&r %{temp.players.%loop-player%.feelTemp.waterTemp}%/%{temp.players.%loop-player%.actualTemp.waterTemp}%"
+                set line 5 of loop-player's fastboard to "&7Wetness:&r %{temp.players.%loop-player%.wetness}%/{@maxWetness}:&r %{temp.players.%loop-player%.wetnessTemp}%"
+                set line 6 of loop-player's fastboard to "&7Environment:&r %{temp.players.%loop-player%.feelTemp.environmentTemp}%/%{temp.players.%loop-player%.actualTemp.environmentTemp}%"
+                set line 7 of loop-player's fastboard to "&7Activity:&r %{temp.players.%loop-player%.feelTemp.activityTemp}%/%{temp.players.%loop-player%.actualTemp.activityTemp}%"
+                set line 8 of loop-player's fastboard to "&7State:&r %{temp.players.%loop-player%.feelTemp.stateTemp}%/%{temp.players.%loop-player%.actualTemp.stateTemp}%"
+                set line 9 of loop-player's fastboard to "&7Tool:&r %{temp.players.%loop-player%.feelTemp.heldItemTemp}%/%{temp.players.%loop-player%.actualTemp.heldItemTemp}%"
+                set line 10 of loop-player's fastboard to "&7Armr:&r %{temp.players.%loop-player%.feelTemp.clothingTemp}%/%{temp.players.%loop-player%.actualTemp.clothingTemp}% %{temp.resistanceClothing.debug.resistInfo}%"
+                set line 11 of loop-player's fastboard to "&7Resist:&r %{temp.resistanceEffects.debug.resistInfo}% %{temp.resistanceHunger.debug.resistInfo}% %{temp.resistanceThirst.debug.resistInfo}%"
+                set line 12 of loop-player's fastboard to "&7Total:&r %{temp.players.%loop-player%.feelTemp.total}%/%{temp.players.%loop-player%.actualTemp.total}%"
+                
+        wait {@tempRefreshRate} ticks
+
+# Add all the temperature factors
+function calcPlayerTemp(plr: player):
+    if {_plr} is online:
+        
+        set {temp.players.%{_plr}%.actualTemp.sunlightTemp} to calcSunlightTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.sunlightTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.sunlightTemp} to {temp.players.%{_plr}%.actualTemp.sunlightTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.sunlightTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.sunlightTemp}, {temp.players.%{_plr}%.actualTemp.sunlightTemp}, {@sunlightRate})
+        
+        set {temp.players.%{_plr}%.actualTemp.environmentTemp} to calcEnvironmentTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.environmentTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.environmentTemp} to {temp.players.%{_plr}%.actualTemp.environmentTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.environmentTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.environmentTemp}, {temp.players.%{_plr}%.actualTemp.environmentTemp}, {@environmentRate})
+        
+        set {temp.players.%{_plr}%.actualTemp.waterTemp} to calcWaterTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.waterTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.waterTemp} to {temp.players.%{_plr}%.actualTemp.waterTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.waterTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.waterTemp}, {temp.players.%{_plr}%.actualTemp.waterTemp}, {@waterRate})
+        
+        set {temp.players.%{_plr}%.wetnessTemp} to calcWetness({_plr})
+        
+        set {temp.players.%{_plr}%.actualTemp.activityTemp} to calcActivityTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.activityTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.activityTemp} to {temp.players.%{_plr}%.actualTemp.activityTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.activityTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.activityTemp}, {temp.players.%{_plr}%.actualTemp.activityTemp}, {@activityRate})
+        
+        set {temp.players.%{_plr}%.actualTemp.stateTemp} to calcStateTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.stateTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.stateTemp} to {temp.players.%{_plr}%.actualTemp.stateTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.stateTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.stateTemp}, {temp.players.%{_plr}%.actualTemp.stateTemp}, {@stateRate})
+        
+        set {temp.players.%{_plr}%.actualTemp.clothingTemp} to calcClothingWarmth({_plr})
+        if {temp.players.%{_plr}%.feelTemp.clothingTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.clothingTemp} to {temp.players.%{_plr}%.actualTemp.clothingTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.clothingTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.clothingTemp}, {temp.players.%{_plr}%.actualTemp.clothingTemp}, {@clothingRate})
+        
+        set {temp.players.%{_plr}%.actualTemp.heldItemTemp} to calcHeldItemTemp({_plr})
+        if {temp.players.%{_plr}%.feelTemp.heldItemTemp} is not set:
+            set {temp.players.%{_plr}%.feelTemp.heldItemTemp} to {temp.players.%{_plr}%.actualTemp.heldItemTemp}
+        else:
+            set {temp.players.%{_plr}%.feelTemp.heldItemTemp} to calcLogGradual({temp.players.%{_plr}%.feelTemp.heldItemTemp}, {temp.players.%{_plr}%.actualTemp.heldItemTemp}, {@heldItemRate})
+        
+        
+        set {temp.players.%{_plr}%.actualTemp.total} to 0
+        add {temp.players.%{_plr}%.actualTemp.sunlightTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.environmentTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.waterTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.wetnessTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.activityTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.stateTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.heldItemTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        add {temp.players.%{_plr}%.actualTemp.clothingTemp} to {temp.players.%{_plr}%.actualTemp.total}
+        
+        set {temp.players.%{_plr}%.feelTemp.total} to 0
+        add {temp.players.%{_plr}%.feelTemp.sunlightTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.feelTemp.environmentTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.feelTemp.waterTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.wetnessTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.feelTemp.activityTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.feelTemp.stateTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        add {temp.players.%{_plr}%.feelTemp.heldItemTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        
+        # Apply resistances
+        set {temp.players.%{_plr}%.feelTemp.preResistTotal} to {temp.players.%{_plr}%.feelTemp.total}
+        set {temp.players.%{_plr}%.feelTemp.total} to calcResistanceEffects({_plr}, calcResistanceClothing({_plr}, calcResistanceHunger({_plr}, calcResistanceThirst({_plr}, {temp.players.%{_plr}%.feelTemp.total}))))
+        
+        # The following factors can't be resisted
+        add {temp.players.%{_plr}%.feelTemp.clothingTemp} to {temp.players.%{_plr}%.feelTemp.total}
+        
+# End of calcPlayerTemp
+
+
+function calcLogGradual(feel: number, actual: number, rate: number) :: number:
+    set {_diff} to {_actual} - {_feel}
+    set {_change} to {_diff} * {_rate}
+
+    return {_feel} + {_change}
+
+placeholderapi placeholder with the prefix "seasonstempfeels":
+    set the result to {temp.players.%player%.feelTemp.%identifier%}
+
+placeholderapi placeholder with the prefix "seasonstempactual":
+    set the result to {temp.players.%player%.actualTemp.%identifier%}
+
+
+####################################
+# DEBUFFS
+####################################
+function getDebuffs(plr: player, temp: number):
+    delete {temp.players.%{_plr}%.debuffs::*}
+    
+    # loop through debuff list and see if any of their criteria are met. If yes, add them to the player's debuff list
+    loop {temp.debuffs::*}:
+        delete {_thresholds::*} # Reset for the current debuff
+        loop "%loop-value%" split at ",": # Split in case it's a string (meaning multiple thresholds). Make a string in case it is already a number
+            add loop-value-2 parsed as number to {_thresholds::*}
+        
+        loop {_thresholds::*}:
+            set {_threshold} to loop-value-2
+            
+            ## Check and apply hot debuffs
+            if {_threshold} is greater than {@idealTemp}: # Check if hot debuff
+                if {_temp} is greater than {_threshold}: # Check if it crosses threshold
+                    if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is set:
+                        if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is less than or equal to 0:
+                            add loop-index-1 to {temp.players.%{_plr}%.debuffs::*}
+                        else:
+                            add -1 to {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} # Countdown
+                            #send "&4You will get %loop-index-1% in %{temp.players.%{_plr}%.debuffTimers::%loop-index-1%}%..." to {_plr}
+                    else:
+                        #send "%loop-index-1% countdown starting" to {_plr}
+                        set {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} to {@debuffGracePeriod}
+                else if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is less than or equal to 0:
+                    if any: # Check to make sure that we're not wiping the cold threshold's debuff
+                        size of {_thresholds::*} is 1 # There won't be a cold threshold if hot is the only one
+                        {_temp} is not less than min({_thresholds::*}) # Make sure not to wipe cold threshold's debuff
+                    then:
+                        #send "You are cured from hot %loop-index-1%. MinThres %min({_thresholds::*})%" to {_plr}
+                        delete {temp.players.%{_plr}%.debuffTimers::%loop-index-1%}
+            else if {_threshold} is less than {@idealTemp}: # Check if cold debuff
+                if {_temp} is less than {_threshold}: # Check if it crosses the threshold
+                    if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is set:
+                        if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is less than or equal to 0:
+                            add loop-index-1 to {temp.players.%{_plr}%.debuffs::*}
+                        else:
+                            add -1 to {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} # Countdown
+                            #send "&4You will get %loop-index-1% in %{temp.players.%{_plr}%.debuffTimers::%loop-index-1%}%..." to {_plr}
+                    else:
+                        #send "%loop-index-1% countdown starting" to {_plr}
+                        set {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} to {@debuffGracePeriod}
+                else if {temp.players.%{_plr}%.debuffTimers::%loop-index-1%} is less than or equal to 0:
+                    if any: # Check to make sure that we're not wiping the hot threshold's debuff
+                        size of {_thresholds::*} is 1 # There won't be a hot threshold if cold is the only one
+                        {_temp} is not greater than max({_thresholds::*}) # Make sure not to wipe hot threshold's debuff
+                    then:
+                        #send "You are cured from cold %loop-index-1%. MaxThres: %max({_thresholds::*})%" to {_plr}
+                        delete {temp.players.%{_plr}%.debuffTimers::%loop-index-1%}
+    
+    if {temp.players.%{_plr}%.debuffs::*} contains "freeze":
+        set {_plr}'s freeze time to 200 ticks
+        
+    if {temp.players.%{_plr}%.debuffs::*} contains "burn":
+        ignite {_plr} for 1 second
+    
+    loop {temp.players.%{_plr}%.debuffs::*}:
+        set {_potInfo::*} to loop-value split at ","
+        set {_potType} to {_potInfo::1} parsed as potion effect type
+        if potion effect types contains {_potType}:
+            apply ambient {_potType} of tier {_potInfo::2} parsed as number without particles to {_plr} for 8 seconds replacing the existing effect
+
+####################################
+# BIOMES / SUNLIGHT
+####################################
+function getBiomeHumidity(plr: player) :: number:
+    return humidity of block at {_plr}
+
+function getBiomeTemp(plr: player) :: number:
+    set {_b} to temperature of block at {_plr}
+    if {_b} is greater than 1.1: # Dry biomes (desert, savannah, badlands) have a base temp of 2. This is a weird jump from the base temp of 1 of jungles and stony peaks. So just reset dry biomes to just above 1
+        set {_b} to 1.1
+    return {_b}
+
+function calcSunlightTemp(plr: player) :: number:
+    set {_skylightLevel} to sunlight level at {_plr}
+    set {_outsideStrength} to 1 * ({_skylightLevel}^2)/(15^2) #Save this for later... Replace 1 with {@sunlightModifier}
+    
+    set {_temp} to calcTimeHeat(getTime({_plr}), getBiomeTemp({_plr}), getBiomeHumidity({_plr}))
+    set {_temp} to calcWeatherTemp({_plr}, {_temp})
+    
+    set {_sunlightTemp} to {_temp} * {_outsideStrength} + {@caveAndIndoorTemp} * (1 - {_outsideStrength})
+
+    return {_sunlightTemp}
+
+function calcTimeHeat(time: number, biomeTemp: number, biomeHumidity: number) :: number:
+    set {_h} to 1 - {_biomeHumidity}/2
+    set {_b} to {_biomeTemp}
+    set {_ab} to abs({_b})
+    
+    return 10 * cos((pi*({_time}-{@timePeakTempTime})/1200) * 180/pi) * {_h} * ({_ab}+1) * ({_b}+1) + 32*{_b}*{_ab}/{_h} + 32 * ({_b} + 1 - {_ab})
+
+function getTime(ent: entity) :: number:
+    set {_time} to "%(time in {_ent}'s world)%"
+    #send "Bad time: %{_time}%" to player
+    set {_timeSections::*} to {_time} split at ":"
+    set {_hoursStr} to {_timeSections::1}
+    set {_minsStr} to {_timeSections::2}
+    set {_mins} to {_minsStr} parsed as number
+    #send "Hrs %{_hoursStr}%" to player
+    #send "Mins %{_minsStr}%" to player
+    set {_decMins} to ({_mins}/60)*100
+    if {_decMins} is less than 10:
+        set {_decMinsStr} to "0%{_decMins}%"
+    else:
+        set {_decMinsStr} to "%{_decMins}%"
+    set {_goodTime} to "%{_hoursStr}%%{_decMinsStr}%"
+    return {_goodTime} parsed as number
+
+function calcWeatherTemp(plr: player, temp: number) :: number:
+    if weather in world of {_plr} is not clear:
+        if getBiomeHumidity({_plr}) is 0: # no downfall
+            # clouds protect from heat of sun
+            if {_temp} is greater than {@idealTemp}:
+                set {_temp} to ({_temp} - {@idealTemp})*{@cloudResistFactor} + {@idealTemp}
+        else:
+            # Note: getting wet in rain is handled by calcWetness
+            # If it is snowing
+            if getBiomeTemp({_plr}) is greater than or equal to 0.15:
+                add {@cloudModifier} * 0.5 to {_temp}
+            else:
+                add {@cloudModifier} * 0.2 to {_temp}
+        add {@cloudModifier} to {_temp}
+    return {_temp}
+
+
+#######################################
+# ENVIRONMENT
+#######################################
+
+# Water
+function calcWaterTemp(plr: player) :: number:
+    set {_temp} to 0
+    set {_skyPercent} to (sunlight level at {_plr})/15
+    if {_plr} is in water:
+        if {_plr} is in bubble column:
+            add {temp.blocks::magma block} * 0.5 to {_temp}
+        else:
+            add {@inWaterModifier} * {_skyPercent} to {_temp}
+    else if block at {_plr} is water cauldron:
+        set {_blockBelow} to "%type of block 1 block below location of {_plr}%"
+        if all:
+            {_blockBelow} partially matches "fire"
+            {temp.blocks::%{_blockBelow}%} is set
+        then:
+            add {temp.blocks::%{_blockBelow}%} * 2 to {_temp}
+        else:
+            add {@inWaterModifier} * {_skyPercent} to {_temp}
+    return {_temp}
+
+# Wetness
+function calcWetness(plr: player) :: number:
+    if {temp.players.%{_plr}%.wetness} is not set:
+        set {temp.players.%{_plr}%.wetness} to 0
+    if any:
+        {_plr} is wet
+        block at {_plr} is water cauldron
+    then:
+        if {temp.players.%{_plr}%.wetness} is less than {@maxWetness}:
+            add {@wetSpeed} to {temp.players.%{_plr}%.wetness}
+    else:
+        if {temp.players.%{_plr}%.wetness} is greater than 0:
+            remove {@drySpeed} from {temp.players.%{_plr}%.wetness}
+        # Only consider wet if outside of water. In rain is wet though, since it is not checked in calcWaterTemp
+        set {_skyPercent} to (sunlight level at {_plr})/15 # Same as water, if you're indoors/caving, water temperature should be ~room temperature
+        if {temp.players.%{_plr}%.wetness} is greater than 0:
+            if {@useWetnessTempDegradation} is 1:
+                return {_skyPercent} * {@wetnessTemp} * {temp.players.%{_plr}%.wetness} / {@maxWetness}
+            else:
+                return {_skyPercent} * {@wetnessTemp}
+    return 0
+
+# Nearby Blocks
+function calcEnvironmentTemp(plr: player) :: number:
+    set {_temp} to 0
+    set {_maxTemp} to 0
+    set {_minTemp} to 0
+    if {_plr} is in lava: # I do not care what else is around you, you are hot in lava.
+        set {_temp} to 1100
+        set {_maxTemp} to {_temp}
+    else:
+        loop blocks in radius {@environmentRange} of {_plr} where [type of input is not air]:
+            set {_blocktype} to "%type of loop-block%"
+            if all:
+                {temp.blocks::%{_blocktype}%} is set
+                "%blockdata of loop-block%" does not partially match "lit=false" # Don't count unlit
+                "%blockdata of loop-block%" does not partially match "powered=false" # Nor unpowered
+            then:
+                set {_blockTemp} to 0
+                if "%blockdata of loop-block%" partially match "candles=":
+                    set {_candleDataInd} to index of "candles=" in "%blockdata of loop-block%"
+                    set {_numCandlesStr} to substring of "%blockdata of loop-block%" from index {_candleDataInd} + 8 to {_candleDataInd} + 8
+                    set {_numCandles} to {_numCandlesStr} parsed as number
+                    add {_numCandles} * {temp.blocks::%{_blocktype}%} to {_blockTemp}
+                else:
+                    add {temp.blocks::%{_blocktype}%} to {_blockTemp}
+                
+                # Now check for distance
+                set {_dist} to distance between {_plr} and loop-block
+                set {_distTemp} to {_blockTemp} * ({@environmentRange} - {_dist})/{@environmentRange}
+                
+                # Set min and max temps.
+                # This is to ensure that things don't get too intense if there's a lot of temperature blocks in the area.
+                # So set max/min temps to be only a multiple of the strength of the hottest/coldest block's base temperature.
+                set {_blockTempLimit} to {_distTemp}*2
+                if {_blockTempLimit} is greater than {_maxTemp}:
+                    set {_maxTemp} to {_blockTempLimit}
+                if {_blockTempLimit} is less than {_minTemp}:
+                    set {_minTemp} to {_blockTempLimit}
+                
+                # Check for obstructions
+                set {_inverseDiminishRatio} to 1
+                set {_headlevel} to location 1 block above {_plr}
+                loop all blocks within {_headlevel} and loop-block where [type of input is not air]:
+                    if all: # Check if block protects from temperature
+                        loop-block-2 is not loop-block-1
+                        loop-block-2 is solid
+                        "%blockdata of loop-block-2%" does not partially match "waterlogged="
+                    then:
+                        set {_inverseDiminishRatio} to {_inverseDiminishRatio} * 0.5
+                set {_obstructedTemp} to {_distTemp} * {_inverseDiminishRatio}
+                add {_obstructedTemp} to {_temp}
+    
+    if {_temp} is greater than {_maxTemp}:
+        set {_temp} to {_maxTemp}
+    else if {_temp} is less than {_minTemp}:
+        set {_temp} to {_minTemp}
+    return {_temp}
+
+
+#######################################
+# PLAYER ACTIVITY / STATE / EQUIPMENT
+#######################################
+
+# Activity / state
+function calcActivityTemp(plr: player) :: number:
+    set {_temp} to 0
+    
+    if {_plr} is sprinting:
+        if {_plr}'s vehicle is not set:
+            add {@sprintingTemp} to {_temp}
+    if {_plr} is swimming:
+        add {@swimmingTemp} to {_temp}
+    
+    return {_temp}
+
+function calcStateTemp(plr: player) :: number:
+    set {_temp} to 0
+    
+    if {_plr} is burning:
+        add {@burningTemp} to {_temp}
+    if {_plr} is frozen:
+        add {@freezingTemp} to {_temp}
+    
+    return {_temp}
+
+# Clothing/Equipment
+function calcHeldItemTemp(plr: player) :: number:
+    set {_temp} to 0
+    
+    set {_held} to "%{_plr}'s tool%"
+    set {_offhand} to "%{_plr}'s offhand tool%"
+    if {temp.items::%{_held}%} is set:
+        add {temp.items::%{_held}%} to {_temp}
+    if {temp.items::%{_offhand}%} is set:
+        add {temp.items::%{_offhand}%} to {_temp}
+    
+    return {_temp}
+
+
+function getClothingWarmthFactor(armour: string):: number:
+    set {_warmthFactor} to {temp.clothingWarmth::%getArmourMaterial({_armour})%}
+    if {_warmthFactor} is not set:
+        set {_warmthFactor} to {temp.clothingWarmth.default}
+    
+    if {_armour} contains "chestplate":
+        set {_warmthFactor} to {_warmthFactor} * 1.6
+    else if {_armour} contains "leggings":
+        set {_warmthFactor} to {_warmthFactor} * 1.2
+    return {_warmthFactor}
+function calcClothingWarmth(plr: player) :: number:
+    set {_clothingTemp} to 0
+
+    set {_plrArmour::*} to helmet of {_plr}, chestplate of {_plr}, leggings of {_plr}, and boots of {_plr}
+    loop {_plrArmour::*} where [input is not air]:
+        add getClothingWarmthFactor("%loop-value%") to {_clothingTemp}
+
+    return {_clothingTemp}
+
+function getArmourMaterial(armour: string):: string:
+    set {_armourTypes::*} to "leather", "turtle", "chainmail", "iron", "golden", "diamond", and "netherite"
+    loop {_armourTypes::*}:
+        if {_armour} contains loop-value:
+            return loop-value
+    # If none match, return nothing
+
+function calcResistanceClothing(plr: player, temp: number):: number:
+    set {_currTemp} to {_temp}
+    set {_resPerc} to 1 # the percent to reduce the temp to
+    set {_resistingCold} to false
+    set {_resistingHot} to false
+    
+    set {_plrArmour::*} to helmet of {_plr}, chestplate of {_plr}, leggings of {_plr}, and boots of {_plr}
+    loop {_plrArmour::*}:
+        set {_armourMaterial} to getArmourMaterial("%loop-value%")
+        if {_armourMaterial} is set:
+            set {_clothingModifier} to {temp.resistanceClothing::%{_armourMaterial}%}
+            if {_clothingModifier} is not set:
+                set {_clothingModifier} to {temp.resistanceClothing.default}
+            
+            # Always check for universal resist
+            if all: # If modifier is ]1,2] then resist all
+                {_clothingModifier} is greater than 1
+                {_clothingModifier} is less than or equal to 2
+            then:
+                set {_resPerc} to {_resPerc} * (2 - {_clothingModifier})
+                set {_resistingCold} to true
+                set {_resistingHot} to true
+            
+            # Only check for hot/cold resist if temperature warrants resistance
+            if {_currTemp} is less than {@idealTemp}: # if player is cold. If player isn't cold, no resistance needed
+                if all: # If modifier is [-1,0[ then resist cold
+                    {_clothingModifier} is greater than or equal to -1
+                    {_clothingModifier} is less than 0
+                then:
+                    set {_resPerc} to {_resPerc} * (1 - abs({_clothingModifier}))
+                    set {_resistingCold} to true
+            else if {_currTemp} is greater than {@idealTemp}: # if player is hot. If player isn't hot, no resistance needed
+                if all: # If modifier is ]0,1] then resist hot
+                    {_clothingModifier} is greater than 0
+                    {_clothingModifier} is less than or equal to 1
+                then:
+                    set {_resPerc} to {_resPerc} * (1 - {_clothingModifier})
+                    set {_resistingHot} to true
+            
+            set {_currTemp} to ({_currTemp} - {@idealTemp})*{_resPerc} + {@idealTemp}
+            loop enchantments of loop-value where [{temp.resistanceEnchants::%type of input%} is set]:
+                set {_enchModifier} to {temp.resistanceEnchants::%type of loop-value-2%}
+                
+                # Always check for universal resist
+                if all: # If modifier is ]1,2] then resist all
+                    {_enchModifier} is greater than 1
+                    {_enchModifier} is less than or equal to 2
+                then:
+                    set {_resPerc} to {_resPerc} * (2 - {_enchModifier}) ^ enchantment level of loop-value-2
+                    set {_resistingCold} to true
+                    set {_resistingHot} to true
+                
+                # Only check for hot/cold resist if temperature warrants resistance
+                if {_currTemp} is less than {@idealTemp}: # if player is cold. If player isn't cold, no resistance needed
+                    if all: # If modifier is [-1,0[ then resist cold
+                        {_enchModifier} is greater than or equal to -1
+                        {_enchModifier} is less than 0
+                    then:
+                        set {_resPerc} to {_resPerc} * (1 - abs({_enchModifier})) ^ enchantment level of loop-value-2
+                        set {_resistingCold} to true
+                else if {_currTemp} is greater than {@idealTemp}: # if player is hot. If player isn't hot, no resistance needed
+                    if all: # If modifier is ]0,1] then resist hot
+                        {_enchModifier} is greater than 0
+                        {_enchModifier} is less than or equal to 1
+                    then:
+                        set {_resPerc} to {_resPerc} * (1 - {_enchModifier}) ^ enchantment level of loop-value-2
+                        set {_resistingHot} to true
+                
+                set {_currTemp} to ({_currTemp} - {@idealTemp})*{_resPerc} + {@idealTemp}
+    
+    set {temp.resistanceClothing.debug.resistInfo} to "&dRes&r%(1 - {_resPerc}) * 100%%% "
+    set {temp.resistanceClothing.debug.resistInfo} to {temp.resistanceClothing.debug.resistInfo} + "&bC" if {_resistingCold} is true else {temp.resistanceClothing.debug.resistInfo} + " "
+    set {temp.resistanceClothing.debug.resistInfo} to {temp.resistanceClothing.debug.resistInfo} + "&cH" if {_resistingHot} is true else {temp.resistanceClothing.debug.resistInfo} + " "
+    return {_currTemp}
+#######################################
+# CONSUMABLES
+#######################################
+### Food Level Resistance
+function calcResistanceHunger(plr: player, temp: number):: number:
+    set {_resPerc} to 1
+    
+    if hunger level of {_plr} is greater than {@hungerMidPoint}:
+        set {_resPerc} to 1 - ( {@hungerMaxResistanceAmt} * (hunger level of {_plr} - {@hungerMidPoint})/(10-{@hungerMidPoint}) )
+    else:
+        set {_resPerc} to 1 + ( {@hungerMaxVulnAmt} * ({@hungerMidPoint} - hunger level of {_plr})/{@hungerMidPoint} )
+    
+    
+    set {temp.resistanceHunger.debug.resistInfo} to "&6H&r%0-({_resPerc} - 1) * 100%%%"
+    set {_currTemp} to ({_temp} - {@idealTemp})*{_resPerc} + {@idealTemp}
+    return {_currTemp}
+
+function calcResistanceThirst(plr: player, temp: number):: number:
+    set {_thirstLevel} to placeholder "thirstbar_current_int" from {_plr} parsed as integer
+    set {_thirstMax} to placeholder "thirstbar_max_int" from {_plr} parsed as integer
+    
+    # Make sure the placeholders were successfully retrieved
+    if any:
+        {_thirstLevel} is not set
+        {_thirstMax} is not set
+    then:
+        return {_temp}
+    
+    set {_resPerc} to 1
+    if {_thirstLevel} is greater than {@thirstMidPoint}:
+        set {_resPerc} to 1 - ( {@thirstMaxResistanceAmt} * ({_thirstLevel} - {@thirstMidPoint})/({_thirstMax}-{@thirstMidPoint}) )
+    else:
+        set {_resPerc} to 1 + ( {@thirstMaxVulnAmt} * ({@thirstMidPoint} - {_thirstLevel})/{@thirstMidPoint} )
+    
+    
+    set {temp.resistanceThirst.debug.resistInfo} to "&bT&r%0-({_resPerc} - 1) * 100%%%"
+    set {_currTemp} to ({_temp} - {@idealTemp})*{_resPerc} + {@idealTemp}
+    return {_currTemp}
+
+### Potion Effects
+function calcResistanceEffects(plr: player, temp: number):: number:
+    set {_currTemp} to {_temp}
+    set {_resPerc} to 1 # the percent to reduce the temp to
+    set {_resistingCold} to false
+    set {_resistingHot} to false
+    loop active potion effects of {_plr} where [{temp.resistanceEffects::%type of input%} is set]:
+        if any: # Don't count the turtle helmet's water breathing. Have to ban last 10 seconds for all of water breathing or else the player can just spam the helmet on and off to gain the resistance
+            type of loop-potion effect is not water breathing
+            potion duration of loop-potion effect is greater than 10 seconds
+        then:
+            set {_effModifier} to {temp.resistanceEffects::%type of loop-potion effect%}
+            
+            # Always check for universal resist
+            if all: # If modifier is ]1,2] then resist all
+                {_effModifier} is greater than 1
+                {_effModifier} is less than or equal to 2
+            then:
+                set {_resPerc} to {_resPerc} * (2 - {_effModifier}) ^ potion tier of loop-potion effect
+                set {_resistingCold} to true
+                set {_resistingHot} to true
+            
+            # Only check for hot/cold resist if temperature warrants resistance
+            if {_currTemp} is less than {@idealTemp}: # if player is cold. If player isn't cold, no resistance needed
+                if all: # If modifier is [-1,0[ then resist cold
+                    {_effModifier} is greater than or equal to -1
+                    {_effModifier} is less than 0
+                then:
+                    set {_resPerc} to {_resPerc} * (1 - abs({_effModifier})) ^ potion tier of loop-potion effect
+                    set {_resistingCold} to true
+            else if {_currTemp} is greater than {@idealTemp}: # if player is hot. If player isn't hot, no resistance needed
+                if all: # If modifier is ]0,1] then resist hot
+                    {_effModifier} is greater than 0
+                    {_effModifier} is less than or equal to 1
+                then:
+                    set {_resPerc} to {_resPerc} * (1 - {_effModifier}) ^ potion tier of loop-potion effect
+                    set {_resistingHot} to true
+            
+            set {_currTemp} to ({_currTemp} - {@idealTemp})*{_resPerc} + {@idealTemp}
+            if all:
+                {_currTemp} is less than {@minTempWhileResisting}
+                {_resistingCold} is true
+            then:
+                set {_currTemp} to {@minTempWhileResisting}
+            else if all:
+                {_currTemp} is greater than {@maxTempWhileResisting}
+                {_resistingHot} is true
+            then:
+                set {_currTemp} to {@maxTempWhileResisting}
+
+    if any:
+        {_resistingCold} is true
+        {_resistingHot} is true
+    then:
+        setPlaceholder({_plr}, "isresistingtemperature", true)
+    else:
+        setPlaceholder({_plr}, "isresistingtemperature", false)
+    
+    set {temp.resistanceEffects.debug.resistInfo} to "&dE&r%(1 - {_resPerc}) * 100%%% "
+    set {temp.resistanceEffects.debug.resistInfo} to {temp.resistanceEffects.debug.resistInfo} + "&bC" if {_resistingCold} is true else {temp.resistanceEffects.debug.resistInfo} + " "
+    set {temp.resistanceEffects.debug.resistInfo} to {temp.resistanceEffects.debug.resistInfo} + "&cH" if {_resistingHot} is true else {temp.resistanceEffects.debug.resistInfo} + " "
+    return {_currTemp}
+
+#######################################
+# Misc
+#######################################
+function FahrToCel(f: number) :: number:
+    return ({_f}-32)*5/9
+
+# Hide temperature bar when changing to world without temperature
+on player world change:
+    if {@enabledWorlds} does not contain event-world:
+        if {temp.players.%player%.bossbar} is set:
+            delete bossbar with id "%player's name%_temperature"
+            delete {temp.players.%player%.bossbar}
+
+function ToggleUnits(plr: player):
+    if {temp.players.%{_plr}%.useCelcius} is not set:
+        set {temp.players.%{_plr}%.useCelcius} to true
+        send "&eNow using °C" to {_plr}
+    else:
+        delete {temp.players.%{_plr}%.useCelcius}
+        send "&eNow using °F" to {_plr}
+
+function ToggleActual(plr: player):
+    if {temp.players.%{_plr}%.showActual} is not set:
+        set {temp.players.%{_plr}%.showActual} to true
+        send "&eNow additionally showing ""Actual Temperature"" (Feels/Actual)" to {_plr}
+    else:
+        delete {temp.players.%{_plr}%.showActual}
+        send "&eHiding ""Actual Temperature""" to {_plr}
+
+function ToggleShowFromInventory(plr: player):
+    if {temp.players.%{_plr}%.showFromInventory} is not set:
+        set {temp.players.%{_plr}%.showFromInventory} to true
+        send "&eTemperature is now always displayed if you have a thermometer in your inventory" to {_plr}
+    else:
+        delete {temp.players.%{_plr}%.showFromInventory}
+        send "&eTemperature is now only displayed when holding a thermometer" to {_plr}
+
+on right click with recovery compass on air:
+    if {temp.players.%event-player%.thermometerLocked} is not set:
+        if any:
+            event-player's tool is of type {@thermometerType}
+            event-player's off hand tool is of type {@thermometerType}
+        then:
+            if event-player is sneaking:
+                ToggleShowFromInventory(event-player)
+            else:
+                ToggleUnits(event-player)
+
+command /thermometer-toggleunits:
+    trigger:
+        ToggleUnits(player)
+
+command /thermometer-showonlywhenholding:
+    trigger:
+        ToggleShowFromInventory(player)
+
+command /thermometer-showactual:
+    trigger:
+        ToggleActual(player)
+
+command /thermometer-locksettings:
+    trigger:
+        if {temp.players.%player%.thermometerLocked} is not set:
+            set {temp.players.%player%.thermometerLocked} to true
+            send "&eThermometer will no longer switch modes on right-click. You can stll use /thermometer-toggleunits and /thermometer-showonlywhenholding." to player
+        else:
+            delete {temp.players.%player%.thermometerLocked}
+            send "&eThermometer will now change units on right-click, and toggle actual temperature on right-click while sneaking." to player
+
+command /thermometer-help:
+    trigger:
+        send "&7/thermometer-toggleunits:&f Toggle between Celcius and Fahrenheit. &eRight click while holding a thermometer to toggle." to player
+        send "&7/thermometer-showonlywhenholding:&f Toggle between whether the temperature shows only when you are holding a thermometer, or anytime it's anywhere in your inventory. &eRight click while crouching and holding a thermometer to toggle." to player
+        send "&7/thermometer-showactual:&f By default you only see the temperature you are currently ""feeling"". For balance reasons, this doesn't match with the ""actual"" temperature of your surroundings. This setting toggles whether the ""actual"" temperature shows along side your ""feels"" temperature." to player
+        send "&7/thermometer-locksettings:&f Locks whether right click changes thermometer settings while holding the thermometer." to player
+
+### Debug Commands
+command /tempdebugboard:
+    permission: server.admin
+    trigger:
+        if {temp.players.%player%.debugModeOn} is not set:
+            set {temp.players.%player%.debugModeOn} to true
+            toggle fastboard of player on
+        else:
+            delete {temp.players.%player%.debugModeOn}
+            clear fastboard of player # Clear in case we are removing lines from board and want them gone
+            toggle fastboard of player off
+
+command /tempdebugextremeitems:
+    permission: server.admin
+    trigger:
+        if {temp.players.%player%.debugModeOn.items} is not set:
+            set {temp.players.%player%.debugModeOn.items} to true
+            set {temp.items::lava bucket} to 1000
+            set {temp.items::blue ice} to -1000
+        else:
+            delete {temp.players.%player%.debugModeOn.items}
+            tempItemsConfig()
+
+command /temptoggle:
+    permission: server.admin
+    trigger:
+        if {temp.enabled} is true:
+            set {temp.enabled} to false
+            send "disabled temperature" to sender
+        else:
+            set {temp.enabled} to true
+            send "enabled temperature" to sender
+            startTemperatureLoop()
+
+command /tempdebugdebuff:
+    permission: server.admin
+    trigger:
+        if {temp.players.%player%.debugModeOn.debuffs} is not set:
+            set {temp.players.%player%.debugModeOn.debuffs} to false
+            send "Debuffs are &cdisabled" to sender
+        else:
+            delete {temp.players.%player%.debugModeOn.debuffs}
+            send "Debuffs are &2enabled" to sender
+
+command /tempshowbaralways:
+    permission: server.admin
+    trigger:
+        if {temp.alwaysShowTempBar} is not set:
+            set {temp.alwaysShowTempBar} to true
+            send "Temperature bar now always shows" to sender
+        else:
+            delete {temp.alwaysShowTempBar}
+            send "Temperature bar now shows only when holding thermometer item" to sender
+
+function tempshowbar(plr: player, show: boolean):
+    if {_show} is false:
+        if {temp.players.%{_plr}%.bossbar} is set:
+            delete bossbar with id "%{_plr}'s name%_temperature"
+            delete {temp.players.%{_plr}%.bossbar}
+    else:
+        if {temp.players.%{_plr}%.bossbar} is not set:
+            set {temp.players.%{_plr}%.bossbar} to bossbar with id "%{_plr}'s name%_temperature" with title "Measuring..."
+            add {_plr} to {temp.players.%{_plr}%.bossbar}
+            set bar visibility of {temp.players.%{_plr}%.bossbar} to true
