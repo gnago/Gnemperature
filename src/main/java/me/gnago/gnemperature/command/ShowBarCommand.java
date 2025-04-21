@@ -1,15 +1,16 @@
-package me.gnago.temperature.command;
+package me.gnago.gnemperature.command;
 
-import me.gnago.temperature.manager.TemperatureMethods;
+import me.gnago.gnemperature.manager.TemperatureMethods;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class ShowBarCommand implements CommandExecutor {
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             Location target = player.getTargetBlock(null, 8).getLocation();

@@ -1,6 +1,7 @@
-name: 'Temperature'
+name: 'Gnemperature'
+description: 'Temperature plugin that calculates a player''s temperature using various factors and applies debuffs at extremes.'
 version: '${project.version}'
-main: me.gnago.temperature.TemperaturePlugin
+main: me.gnago.gnemperature.GnemperaturePlugin
 api-version: 1.13
 commands:
   showbaralways:

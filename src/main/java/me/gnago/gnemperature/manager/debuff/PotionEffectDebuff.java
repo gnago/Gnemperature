@@ -1,4 +1,4 @@
-package me.gnago.temperature.manager.debuff;
+package me.gnago.gnemperature.manager.debuff;
 
 import org.bukkit.Registry;
 import org.bukkit.entity.LivingEntity;

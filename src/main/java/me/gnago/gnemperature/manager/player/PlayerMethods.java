@@ -1,4 +1,4 @@
-package me.gnago.temperature.manager.player;
+package me.gnago.gnemperature.manager.player;
 
 public interface PlayerMethods {
     void calcTemperature();

@@ -1,13 +1,13 @@
-package me.gnago.temperature.manager.player;
+package me.gnago.gnemperature.manager.player;
 
-import me.gnago.temperature.TemperaturePlugin;
-import me.gnago.temperature.api.PapiHelper;
-import me.gnago.temperature.manager.ClothingType;
-import me.gnago.temperature.manager.Temperature;
-import me.gnago.temperature.manager.TemperatureMethods;
-import me.gnago.temperature.manager.debuff.Debuff;
-import me.gnago.temperature.manager.debuff.DebuffRegistry;
-import me.gnago.temperature.manager.file.ConfigData;
+import me.gnago.gnemperature.GnemperaturePlugin;
+import me.gnago.gnemperature.api.PapiHelper;
+import me.gnago.gnemperature.manager.ClothingType;
+import me.gnago.gnemperature.manager.Temperature;
+import me.gnago.gnemperature.manager.TemperatureMethods;
+import me.gnago.gnemperature.manager.debuff.Debuff;
+import me.gnago.gnemperature.manager.debuff.DebuffRegistry;
+import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -264,7 +264,7 @@ public class PlayerTemperature implements PlayerMethods, PlayerSettings {
         temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.HungerMidPoint, 20,
                 player.getFoodLevel(), ConfigData.HungerMaxResist, ConfigData.HungerMaxVuln));
 
-        PapiHelper papi = TemperaturePlugin.getInstance().getPapiHelper();
+        PapiHelper papi = GnemperaturePlugin.getInstance().getPapiHelper();
         if (papi != null) { // If PlaceholderAPI was enabled on startup
             if (papi.placeholderExists(player,"%thirstbar_isDisabled%")) { // This soft-checks that the server has the ThirstBar plugin
                 if (!Boolean.parseBoolean(papi.getPlaceholderString(player, "%thirstbar_isDisabled%"))) { // Check if enabled
@@ -274,7 +274,7 @@ public class PlayerTemperature implements PlayerMethods, PlayerSettings {
                         temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.ThirstMidPoint, thirstMax,
                                 thirstLevel, ConfigData.ThirstMaxResist, ConfigData.ThirstMaxVuln));
                     } catch (NumberFormatException e) {
-                        TemperaturePlugin.getInstance().getLogger().warning("Failed to retrieve ThirstBar Placeholders");
+                        GnemperaturePlugin.getInstance().getLogger().warning("Failed to retrieve ThirstBar Placeholders");
                     }
                 }
             }
@@ -316,12 +316,12 @@ public class PlayerTemperature implements PlayerMethods, PlayerSettings {
                         scheduledDebuffs.remove(this.getTaskId());
                         activeDebuffs.add(debuff);
                     }
-                }.runTaskLater(TemperaturePlugin.getInstance(), debuff.getDelay()).getTaskId();
+                }.runTaskLater(GnemperaturePlugin.getInstance(), debuff.getDelay()).getTaskId();
 
                 if (id != -1)
                     scheduledDebuffs.put(id,debuff);
                 else
-                    TemperaturePlugin.getInstance().getLogger().warning("Failed to scheduled a task");
+                    GnemperaturePlugin.getInstance().getLogger().warning("Failed to scheduled a task");
             }
         });
 

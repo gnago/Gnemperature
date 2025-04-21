@@ -1,15 +1,15 @@
-package me.gnago.temperature;
+package me.gnago.gnemperature;
 
-import me.gnago.temperature.api.PapiHelper;
-import me.gnago.temperature.api.TemperatureExpansion;
-import me.gnago.temperature.command.ShowBarCommand;
-import me.gnago.temperature.manager.file.ConfigData;
+import me.gnago.gnemperature.api.PapiHelper;
+import me.gnago.gnemperature.api.GnemperatureExpansion;
+import me.gnago.gnemperature.command.ShowBarCommand;
+import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class TemperaturePlugin extends JavaPlugin {
+public final class GnemperaturePlugin extends JavaPlugin {
 
-    private static TemperaturePlugin plugin;
+    private static GnemperaturePlugin plugin;
     private PapiHelper papiHelper;
 
     @Override
@@ -21,7 +21,7 @@ public final class TemperaturePlugin extends JavaPlugin {
         this.getCommand("showbaralways").setExecutor(new ShowBarCommand());
 
         if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new TemperatureExpansion().register();
+            new GnemperatureExpansion().register();
             papiHelper = new PapiHelper();
         }
 
@@ -33,7 +33,7 @@ public final class TemperaturePlugin extends JavaPlugin {
     }
 
     public PapiHelper getPapiHelper() { return papiHelper; }
-    public static TemperaturePlugin getInstance() {
+    public static GnemperaturePlugin getInstance() {
         return plugin;
     }
 }

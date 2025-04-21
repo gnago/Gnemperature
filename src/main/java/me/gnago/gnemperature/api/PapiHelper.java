@@ -1,4 +1,4 @@
-package me.gnago.temperature.api;
+package me.gnago.gnemperature.api;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.OfflinePlayer;

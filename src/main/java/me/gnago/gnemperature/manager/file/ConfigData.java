@@ -1,9 +1,9 @@
-package me.gnago.temperature.manager.file;
+package me.gnago.gnemperature.manager.file;
 
-import me.gnago.temperature.TemperaturePlugin;
-import me.gnago.temperature.manager.ClothingType;
-import me.gnago.temperature.manager.Temperature;
-import me.gnago.temperature.manager.debuff.DebuffRegistry;
+import me.gnago.gnemperature.GnemperaturePlugin;
+import me.gnago.gnemperature.manager.ClothingType;
+import me.gnago.gnemperature.manager.Temperature;
+import me.gnago.gnemperature.manager.debuff.DebuffRegistry;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -69,7 +69,7 @@ public class ConfigData {
     private final FileConfiguration materialsFile;
 
     public ConfigData() {
-        this.configFile = TemperaturePlugin.getInstance().getConfig();
+        this.configFile = GnemperaturePlugin.getInstance().getConfig();
         this.materialsFile = createMaterialsConfig();
 
         RefreshRate = configFile.getInt("refresh_rate", 20);
@@ -183,10 +183,10 @@ public class ConfigData {
     }
 
     private static FileConfiguration createMaterialsConfig() {
-        File file = new File(TemperaturePlugin.getInstance().getDataFolder(), "materials.yml");
+        File file = new File(GnemperaturePlugin.getInstance().getDataFolder(), "materials.yml");
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            TemperaturePlugin.getInstance().saveResource("materials.yml", false);
+            GnemperaturePlugin.getInstance().saveResource("materials.yml", false);
         }
 
         return YamlConfiguration.loadConfiguration(file);

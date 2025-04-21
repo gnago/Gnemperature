@@ -1,6 +1,6 @@
-package me.gnago.temperature.manager.debuff;
+package me.gnago.gnemperature.manager.debuff;
 
-import me.gnago.temperature.TemperaturePlugin;
+import me.gnago.gnemperature.GnemperaturePlugin;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Collection;
@@ -17,7 +17,7 @@ public abstract class Debuff {
             try {
                 return new PotionEffectDebuff(potionData[0], thresholds, delay, Integer.parseInt(potionData[1]));
             } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
-                TemperaturePlugin.getInstance().getLogger().warning("Could not decipher Debuff as potion effect: " + debuffName);
+                GnemperaturePlugin.getInstance().getLogger().warning("Could not decipher Debuff as potion effect: " + debuffName);
             }
         else {
             return new FunctionDebuff(thresholds, delay);

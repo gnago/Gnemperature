@@ -1,6 +1,6 @@
-package me.gnago.temperature.manager.debuff;
+package me.gnago.gnemperature.manager.debuff;
 
-import me.gnago.temperature.TemperaturePlugin;
+import me.gnago.gnemperature.GnemperaturePlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 
@@ -29,7 +29,7 @@ public class FunctionDebuff extends Debuff {
         if (applicationFrequency <= 0) // Less than 0 means only apply once after crossing threshold
             applyFn.accept(entity);
         else {
-            int id = Bukkit.getScheduler().scheduleSyncRepeatingTask(TemperaturePlugin.getInstance(),
+            int id = Bukkit.getScheduler().scheduleSyncRepeatingTask(GnemperaturePlugin.getInstance(),
                     () -> applyFn.accept(entity), 0, applicationFrequency);
 
             if (id != -1)

@@ -1,6 +1,6 @@
-package me.gnago.temperature.manager;
+package me.gnago.gnemperature.manager;
 
-import me.gnago.temperature.manager.file.ConfigData;
+import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.util.BlockIterator;

@@ -1,15 +1,15 @@
-package me.gnago.temperature.api;
+package me.gnago.gnemperature.api;
 
-import me.gnago.temperature.TemperaturePlugin;
+import me.gnago.gnemperature.GnemperaturePlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TemperatureExpansion extends PlaceholderExpansion {
+public class GnemperatureExpansion extends PlaceholderExpansion {
     @Override
     public @NotNull String getIdentifier() {
-        return "temperature";
+        return "gnemperature";
     }
 
     @Override
@@ -19,7 +19,7 @@ public class TemperatureExpansion extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getVersion() {
-        return TemperaturePlugin.getInstance().getDescription().getVersion();
+        return GnemperaturePlugin.getInstance().getDescription().getVersion();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package me.gnago.temperature.manager;
+package me.gnago.gnemperature.manager;
 
 import java.util.Vector;
 

@@ -1,6 +1,6 @@
-package me.gnago.temperature.manager.debuff;
+package me.gnago.gnemperature.manager.debuff;
 
-import me.gnago.temperature.manager.file.ConfigData;
+import me.gnago.gnemperature.manager.file.ConfigData;
 
 import java.util.ArrayList;
 import java.util.Collection;
