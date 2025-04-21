@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PlayerTemperature implements PlayerMethods, PlayerSettings {
+public class PlayerTemperature extends PlayerSettings implements PlayerMethods {
     private final Temperature feelsLike;
     private final Temperature actuallyIs;
     private double wetness;

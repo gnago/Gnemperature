@@ -3,10 +3,6 @@ description: 'Temperature plugin that calculates a player''s temperature using v
 version: '${project.version}'
 main: me.gnago.gnemperature.GnemperaturePlugin
 api-version: 1.13
-commands:
-  showbaralways:
-    description: Toggles whether the temperature bar is shown under any circumstance. Affects all players.
-    permission: server.admin
 softdepend:
   - "PlaceholderAPI"
   - "ThirstBar"
