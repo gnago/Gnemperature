@@ -36,18 +36,14 @@ public abstract class CommandBase extends BukkitCommand implements CommandExecut
         this(command, requiredArgs, requiredArgs, playerOnly);
     }
     public CommandBase(String command, int minArgs, int maxArgs, boolean playerOnly) {
-        this(command, minArgs, maxArgs, playerOnly, null, null);
-    }
-    public CommandBase(String command, int minArgs, int maxArgs, boolean playerOnly, String description, List<String> aliases) {
         super(command);
         this.minArgs = minArgs;
         this.maxArgs = maxArgs;
         this.playerOnly = playerOnly;
-        if (description != null && !description.isEmpty()) {
-            this.setDescription(description);
-        }
-        if (aliases != null && !aliases.isEmpty())
-            this.setAliases(aliases);
+
+        if (initUsage()!= null && !initUsage().isEmpty()) this.setUsage(initUsage());
+        if (initDescription() != null && !initDescription().isEmpty()) this.setDescription(initDescription());
+        if (initAliases() != null && !initAliases().isEmpty()) this.setAliases(initAliases());
 
         CommandMap commandMap = getCommandMap();
         if (commandMap != null) {
@@ -66,7 +62,6 @@ public abstract class CommandBase extends BukkitCommand implements CommandExecut
         } catch (NoSuchFieldException | IllegalAccessException e) {
             GnemperaturePlugin.getInstance().getLogger().severe(e.getMessage());
         }
-
         return null;
     }
 
@@ -124,8 +119,11 @@ public abstract class CommandBase extends BukkitCommand implements CommandExecut
         return onCommand(sender, args);
     }
 
+    protected String initUsage() { return null; }
+    protected String initDescription() { return null; }
+    protected List<String> initAliases() { return null; }
+
     public abstract boolean onCommand(@NotNull CommandSender sender, String[] args);
-    public abstract @Override @NotNull String getUsage();
 
 
 }

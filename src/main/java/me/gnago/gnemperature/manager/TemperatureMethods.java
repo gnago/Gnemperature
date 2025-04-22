@@ -3,6 +3,7 @@ package me.gnago.gnemperature.manager;
 import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.VoxelShape;
@@ -43,6 +44,31 @@ public class TemperatureMethods {
     }
     public static double calcResistBasic(double initTemp, double resistPercent) {
         return (initTemp - ConfigData.IdealTemperature) * resistPercent + ConfigData.IdealTemperature;
+    }
+
+    public static boolean isThermometer(ItemStack item) {
+        return item.isSimilar(ConfigData.ThermometerItem);
+        /*
+        if (item.getType() != ConfigData.ThermometerItem.getType())
+            return false;
+
+        //ItemStack itemClone = item.clone();
+        ItemStack itemClone = new ItemStack(item.getType()) {{
+            setItemMeta(item.getItemMeta());
+        }};
+
+        // Exclude durability
+        if (itemClone.getItemMeta() instanceof Damageable)
+            ((Damageable)itemClone.getItemMeta()).setDamage(0);
+
+        // Exclude Display name (in case of renamed by anvil)
+        if (ConfigData.RecognizeRenamedThermometer && itemClone.getItemMeta() != null) {
+            GnemperaturePlugin.getInstance().getLogger().info("Before:" + itemClone.getItemMeta().getDisplayName());
+            itemClone.getItemMeta().setDisplayName("");
+            GnemperaturePlugin.getInstance().getLogger().info("Now: " + itemClone.getItemMeta().getDisplayName());
+        }
+        return itemClone.isSimilar(ConfigData.ThermometerItem);
+        */
     }
 
     /**

@@ -9,17 +9,19 @@ import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 
 public class ConfigData {
     public static int RefreshRate;
     public static Collection<String> EnabledWorlds;
-    //Add thermometer config
 
     public static double IndoorTemperature;
     public static double PeakTemperatureTime;
@@ -65,130 +67,154 @@ public class ConfigData {
 
     public static int DebuffGracePeriod;
 
-    private final FileConfiguration configFile;
-    private final FileConfiguration materialsFile;
+    public static ItemStack ThermometerItem;
+
+    private final FileConfiguration config;
+    private final FileConfiguration materialsConfig;
+    private final File thermometerConfigFile;
+    private final FileConfiguration thermometerConfig;
 
     public ConfigData() {
-        this.configFile = GnemperaturePlugin.getInstance().getConfig();
-        this.materialsFile = createMaterialsConfig();
+        this.config = GnemperaturePlugin.getInstance().getConfig();
+        this.materialsConfig = createConfig(createFile("materials.yml"));
+        this.thermometerConfigFile = createFile("customitems.yml");
+        this.thermometerConfig = createConfig(thermometerConfigFile);
 
-        RefreshRate = configFile.getInt("refresh_rate", 20);
-        EnabledWorlds = configFile.getStringList("enabled_worlds");
-        IndoorTemperature = configFile.getDouble("indoor_temperature", 64);
-        PeakTemperatureTime = configFile.getInt("peak_temperature_time", 1400);
-        CloudyResistFactor = configFile.getDouble("weather.sun_protection", 0.6);
-        CloudyModifier = configFile.getDouble("weather.modifier", -10);
-        InWaterModifier = configFile.getDouble("in_water_modifier", -24);
-        InLavaModifier = configFile.getDouble("in_lava_modifier", 1100);
-        EnvironmentRange = configFile.getInt("environment_range", 5);
-        SprintingModifier = configFile.getDouble("activity.sprinting", 8);
-        SwimmingModifier = configFile.getDouble("activity.swimming", 0);
-        GlidingModifier = configFile.getDouble("activity.gliding", 0);
-        BurningModifier = configFile.getDouble("state.burning", 50);
-        FreezingModifier = configFile.getDouble("state.freezing", -50);
+        ThermometerItem = thermometerConfig.getItemStack("thermometer", new ItemStack(Material.CLOCK));
+
+        RefreshRate = config.getInt("refresh_rate", 20);
+        EnabledWorlds = config.getStringList("enabled_worlds");
+        IndoorTemperature = config.getDouble("indoor_temperature", 64);
+        PeakTemperatureTime = config.getInt("peak_temperature_time", 1400);
+        CloudyResistFactor = config.getDouble("weather.sun_protection", 0.6);
+        CloudyModifier = config.getDouble("weather.modifier", -10);
+        InWaterModifier = config.getDouble("in_water_modifier", -24);
+        InLavaModifier = config.getDouble("in_lava_modifier", 1100);
+        EnvironmentRange = config.getInt("environment_range", 5);
+        SprintingModifier = config.getDouble("activity.sprinting", 8);
+        SwimmingModifier = config.getDouble("activity.swimming", 0);
+        GlidingModifier = config.getDouble("activity.gliding", 0);
+        BurningModifier = config.getDouble("state.burning", 50);
+        FreezingModifier = config.getDouble("state.freezing", -50);
 
         Temperature.setGradualityRates(new Temperature(
-                configFile.getDouble("graduality.climate",0.12),
-                configFile.getDouble("graduality.water",0.75),
+                config.getDouble("graduality.climate",0.12),
+                config.getDouble("graduality.water",0.75),
                 1, // Wetness is instant since it has its own custom graduality functionality
-                configFile.getDouble("graduality.environment",0.15),
-                configFile.getDouble("graduality.clothing",0.25),
-                configFile.getDouble("graduality.tool",0.7),
-                configFile.getDouble("graduality.activity",0.02),
-                configFile.getDouble("graduality.state",0.8)
+                config.getDouble("graduality.environment",0.15),
+                config.getDouble("graduality.clothing",0.25),
+                config.getDouble("graduality.tool",0.7),
+                config.getDouble("graduality.activity",0.02),
+                config.getDouble("graduality.state",0.8)
         ));
 
-        WetnessModifier = configFile.getDouble("wetness.modifier", -16);
-        WetnessMax = configFile.getDouble("wetness.max", 60);
-        WetnessIncrement = configFile.getDouble("wetness.increment", 5);
-        WetnessDecrement = configFile.getDouble("wetness.decrement", 1);
-        UseWetnessDegradation = configFile.getBoolean("wetness.enable_degradation", true);
+        WetnessModifier = config.getDouble("wetness.modifier", -16);
+        WetnessMax = config.getDouble("wetness.max", 60);
+        WetnessIncrement = config.getDouble("wetness.increment", 5);
+        WetnessDecrement = config.getDouble("wetness.decrement", 1);
+        UseWetnessDegradation = config.getBoolean("wetness.enable_degradation", true);
 
-        IdealTemperature = configFile.getDouble("resistance.ideal", 75);
-        ResistTemperatureMax = configFile.getDouble("resistance.potion_effects.max_temperature", 90);
-        ResistTemperatureMin = configFile.getDouble("resistance.potion_effects.min_temperature", 10);
+        IdealTemperature = config.getDouble("resistance.ideal", 75);
+        ResistTemperatureMax = config.getDouble("resistance.potion_effects.max_temperature", 90);
+        ResistTemperatureMin = config.getDouble("resistance.potion_effects.min_temperature", 10);
 
-        HungerMidPoint = configFile.getDouble("resistance.hunger.midpoint", 3.5);
-        HungerMaxResist = configFile.getDouble("resistance.hunger.resistance", 0.15);
-        HungerMaxVuln = configFile.getDouble("resistance.hunger.vulnerability", 0.4);
-        ThirstMidPoint = configFile.getDouble("resistance.thirst.midpoint", 40);
-        ThirstMaxResist = configFile.getDouble("resistance.thirst.resistance", 0.15);
-        ThirstMaxVuln = configFile.getDouble("resistance.thirst.vulnerability", 0.4);
+        HungerMidPoint = config.getDouble("resistance.hunger.midpoint", 3.5);
+        HungerMaxResist = config.getDouble("resistance.hunger.resistance", 0.15);
+        HungerMaxVuln = config.getDouble("resistance.hunger.vulnerability", 0.4);
+        ThirstMidPoint = config.getDouble("resistance.thirst.midpoint", 40);
+        ThirstMaxResist = config.getDouble("resistance.thirst.resistance", 0.15);
+        ThirstMaxVuln = config.getDouble("resistance.thirst.vulnerability", 0.4);
 
-        DebuffGracePeriod = configFile.getInt("debuff_grace_period", 30);
+        DebuffGracePeriod = config.getInt("debuff_grace_period", 30);
 
         DebuffRegistry.clearRegistry();
-        configFile.getConfigurationSection("debuffs").getKeys(false).forEach(
+        config.getConfigurationSection("debuffs").getKeys(false).forEach(
                 effect -> {
-                    Collection<Double> thresholds = configFile.getDoubleList("debuffs."+effect);
+                    Collection<Double> thresholds = config.getDoubleList("debuffs."+effect);
                     DebuffRegistry.processDebuff(effect, thresholds, DebuffGracePeriod * 20);
                 });
 
         ClothingTypes = new HashMap<>();
-        ClothingType.setDefaults(configFile.getDouble("clothing.default.warmth"),
-                                configFile.getDouble("clothing.default.resistance"));
+        ClothingType.setDefaults(config.getDouble("clothing.default.warmth"),
+                                config.getDouble("clothing.default.resistance"));
         for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
             String matName = mat.name().toLowerCase();
             ClothingTypes.put(mat, new ClothingType(mat,
-                    configFile.getDouble("clothing." + matName + ".warmth"),
-                    configFile.getDouble("clothing." + matName + ".resistance")));
+                    config.getDouble("clothing." + matName + ".warmth"),
+                    config.getDouble("clothing." + matName + ".resistance")));
         }
 
-        ExcludeTurtleHelmetEffect = configFile.getBoolean("resistance.potion_effects.exclude_turtle_helmet_effect", true);
+        ExcludeTurtleHelmetEffect = config.getBoolean("resistance.potion_effects.exclude_turtle_helmet_effect", true);
         ResistanceEffects = new HashMap<>();
-        configFile.getConfigurationSection("resistance.potion_effects.list").getKeys(false).forEach(
+        config.getConfigurationSection("resistance.potion_effects.list").getKeys(false).forEach(
                 key -> {
                     PotionEffectType effType = Registry.EFFECT.match(key.toUpperCase());
                     if (effType != null)
                         ResistanceEffects.put(
                                 new PotionEffect(effType, 8, 0),
-                                configFile.getDouble("resistance.potion_effects.list." + key, 0)
+                                config.getDouble("resistance.potion_effects.list." + key, 0)
                         );
                 });
         ResistanceEnchantments = new HashMap<>();
-        configFile.getConfigurationSection("resistance.enchantments.list").getKeys(false).forEach(
+        config.getConfigurationSection("resistance.enchantments.list").getKeys(false).forEach(
                 key -> {
                     Enchantment enchant = Registry.ENCHANTMENT.match(key.toUpperCase());
                     if (enchant != null)
                         ResistanceEnchantments.put(
                                 enchant,
-                                configFile.getDouble("resistance.enchantments.list." + key, 0)
+                                config.getDouble("resistance.enchantments.list." + key, 0)
                         );
                 });
 
-        MinimumBoilerTemperature = materialsFile.getDouble("minimum_boiler_temperature", 25);
+        MinimumBoilerTemperature = materialsConfig.getDouble("minimum_boiler_temperature", 25);
 
         BlockTemperatures = new HashMap<>();
-        materialsFile.getConfigurationSection("blocks").getKeys(false).forEach(
+        materialsConfig.getConfigurationSection("blocks").getKeys(false).forEach(
                 key -> {
                     Material mat = Registry.MATERIAL.match(key.toUpperCase());
                     if (mat != null)
                         BlockTemperatures.put(
                                 mat,
-                                materialsFile.getDouble("blocks." + key, 0)
+                                materialsConfig.getDouble("blocks." + key, 0)
                         );
                 }
         );
         ItemTemperatures = new HashMap<>();
-        materialsFile.getConfigurationSection("items").getKeys(false).forEach(
+        materialsConfig.getConfigurationSection("items").getKeys(false).forEach(
                 key -> {
                     Material mat = Registry.MATERIAL.match(key.toUpperCase());
                     if (mat != null)
                         ItemTemperatures.put(
                                 mat,
-                                materialsFile.getDouble("items." + key, 0)
+                                materialsConfig.getDouble("items." + key, 0)
                         );
                 }
         );
     }
 
-    private static FileConfiguration createMaterialsConfig() {
-        File file = new File(GnemperaturePlugin.getInstance().getDataFolder(), "materials.yml");
+    private static FileConfiguration createConfig(File file) {
+        return YamlConfiguration.loadConfiguration(file);
+    }
+    private static File createFile(String filename){
+        File file = new File(GnemperaturePlugin.getInstance().getDataFolder(), filename);
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            GnemperaturePlugin.getInstance().saveResource("materials.yml", false);
+            GnemperaturePlugin.getInstance().saveResource(filename, false);
         }
+        return file;
+    }
 
-        return YamlConfiguration.loadConfiguration(file);
+    public boolean SetThermometerItem(@NotNull ItemStack newThermometer) {
+        thermometerConfig.set("thermometer", newThermometer);
+        try {
+            if (newThermometer.getType() != Material.AIR) {
+                thermometerConfig.save(thermometerConfigFile);
+                ThermometerItem = newThermometer;
+                return true;
+            }
+        } catch (IOException e) {
+            GnemperaturePlugin.getInstance().getLogger().warning("Failed to save thermometer file.");
+        }
+        return false;
     }
 }

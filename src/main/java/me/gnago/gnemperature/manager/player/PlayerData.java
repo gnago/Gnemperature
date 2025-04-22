@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PlayerTemperature extends PlayerSettings implements PlayerMethods {
+public class PlayerData extends PlayerSettings implements PlayerMethods {
     private final Temperature feelsLike;
     private final Temperature actuallyIs;
     private double wetness;
@@ -31,12 +31,17 @@ public class PlayerTemperature extends PlayerSettings implements PlayerMethods {
 
     private final Player player;
 
-    public PlayerTemperature(Player player) {
+    public PlayerData(Player player, boolean loadSettingsFromFile) {
+        super(player.getUniqueId(), loadSettingsFromFile);
         this.player = player;
         this.actuallyIs = new Temperature();
         this.feelsLike = this.actuallyIs.copy();
         this.scheduledDebuffs = new HashMap<>();
         this.activeDebuffs = new ArrayList<>();
+    }
+
+    public void resetFeelsLike() {
+        this.feelsLike.set(this.actuallyIs);
     }
 
     @Override
