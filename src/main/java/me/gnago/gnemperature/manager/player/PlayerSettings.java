@@ -44,7 +44,8 @@ public class PlayerSettings {
         return playerUUID;
     }
 
-    public void toggleSetting(Key setting) {
+    public boolean toggleSetting(Key setting) {
         settings.put(setting, !settings.getOrDefault(setting,true));
+        return settings.get(setting);
     }
 }

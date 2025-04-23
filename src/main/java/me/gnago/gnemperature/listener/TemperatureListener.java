@@ -46,7 +46,10 @@ public class TemperatureListener implements Listener {
                 // Prevent dual wielding thermometers from firing twice
                 if (!(e.getHand() == EquipmentSlot.OFF_HAND && mainWield && offWield))
                 {
-                    player.sendMessage("Used thermometer!");
+                    if (player.isSneaking())
+                        TemperatureMethods.toggleShowFromInventory(player);
+                    else
+                        TemperatureMethods.toggleUnits(player);
                 }
             }
         }

@@ -1,8 +1,11 @@
 package me.gnago.gnemperature.manager;
 
+import me.gnago.gnemperature.GnemperaturePlugin;
 import me.gnago.gnemperature.manager.file.ConfigData;
+import me.gnago.gnemperature.manager.player.PlayerSettings;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.BoundingBox;
@@ -110,5 +113,20 @@ public class TemperatureMethods {
                 && boundingBox.getHeight() == 1.0
                 && boundingBox.getWidthZ() == 1.0
         );
+    }
+
+    public static boolean toggleUnits(Player p) {
+        return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.USE_CELSIUS,
+                "&eNow using °C", "&eNow using °F");
+    }
+    public static boolean toggleShowFromInventory(Player p) {
+        return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.SHOW_FROM_INVENTORY,
+                "&eTemperature is now always displayed if you have a thermometer in your inventory",
+                "&eTemperature is now only displayed when holding a thermometer");
+    }
+    public static boolean toggleShowActual(Player p) {
+        return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.SHOW_ACTUAL,
+                "&eNow additionally showing \"Actual Temperature\" (Feels/Actual)",
+                "&eHiding \"Actual Temperature\"");
     }
 }

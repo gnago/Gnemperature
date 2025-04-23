@@ -44,6 +44,15 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
         this.feelsLike.set(this.actuallyIs);
     }
 
+    public boolean toggleSetting(Key setting, String onMessage, String offMessage) {
+        boolean on = toggleSetting(setting);
+        if (on)
+            player.sendRawMessage(onMessage);
+        else
+            player.sendMessage(offMessage);
+        return on;
+    }
+
     @Override
     public void calcTemperature() {
         actuallyIs.set(new Temperature(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp()));

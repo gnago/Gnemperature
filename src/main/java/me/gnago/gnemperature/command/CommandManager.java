@@ -1,6 +1,7 @@
 package me.gnago.gnemperature.command;
 
 import me.gnago.gnemperature.GnemperaturePlugin;
+import me.gnago.gnemperature.manager.TemperatureMethods;
 import me.gnago.gnemperature.manager.player.PlayerSettings;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -30,7 +31,10 @@ public class CommandManager {
         new CommandBase("thermometer-help", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                sender.sendMessage("Works!");
+                ((Player)sender).sendRawMessage("&7/thermometer-toggleunits:&f Toggle between Celsius and Fahrenheit. &eRight click while holding a thermometer to toggle.");
+                ((Player)sender).sendRawMessage("&7/thermometer-showonlywhenholding:&f Toggle between whether the temperature shows only when you are holding a thermometer, or anytime it's anywhere in your inventory. &eRight click while crouching and holding a thermometer to toggle.");
+                ((Player)sender).sendRawMessage("&7/thermometer-showactual:&f By default you only see the temperature you are currently \"feeling\". For balance reasons, this doesn't match with the \"actual\" temperature of your surroundings. This setting toggles whether the \"actual\" temperature shows along side your \"feels\" temperature.");
+                ((Player)sender).sendRawMessage("&7/thermometer-locksettings:&f Locks whether right click changes thermometer settings while holding the thermometer.");
                 return true;
             }
 
@@ -42,7 +46,9 @@ public class CommandManager {
         new CommandBase("thermometer-locksettings", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                sender.sendMessage("Works!");
+                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.LOCK_THERMOMETER,
+                        "&eThermometer will no longer switch modes on right-click. You can still use /thermometer-toggleunits and /thermometer-showonlywhenholding.",
+                        "&eThermometer will now change units on right-click, and toggle actual temperature on right-click while sneaking.");
                 return true;
             }
 
@@ -60,7 +66,7 @@ public class CommandManager {
         new CommandBase("thermometer-toggleunits", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                sender.sendMessage("Heyo");
+                TemperatureMethods.toggleUnits((Player)sender);
                 return true;
             }
 
@@ -69,18 +75,82 @@ public class CommandManager {
             }
         };
 
+        new CommandBase("thermometer-showonlywhenholding", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                TemperatureMethods.toggleShowFromInventory((Player)sender);
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/thermometer-showonlywhenholding";
+            }
+        };
+
+        new CommandBase("thermometer-showactual", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                TemperatureMethods.toggleShowActual((Player)sender);
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/thermometer-showactual";
+            }
+        };
+
         new CommandBase("thermometer-setItem", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
                 if (GnemperaturePlugin.getInstance().setThermometerItem(((Player)sender).getInventory().getItemInMainHand()))
-                    sender.sendMessage("&aThermometer was successfully set!");
+                    ((Player)sender).sendRawMessage("&aThermometer was successfully set!");
                 else
-                    sender.sendMessage("&cFailed to set thermometer.");
+                    ((Player)sender).sendRawMessage("&cFailed to set thermometer.");
                 return true;
             }
 
             public @Override String initUsage() {
                 return "/thermometer-setItem: Assigns the thermometer item to the item in your hand.";
+            }
+        }.setPermission("server.admin");
+
+        new CommandBase("gnemperature-debugboard", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                if (GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_MODE_ON)) {
+                    //todo turn on scoreboard if necessary
+                }
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/gnemperature-debugboard";
+            }
+        }.setPermission("server.admin");
+
+        new CommandBase("gnemperature-debugdebuffs", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_DISABLE_DEBUFFS,
+                        "Debuffs are &cdisabled", "Debuffs are &2enabled");
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/gnemperature-debugdebuffs";
+            }
+        }.setPermission("server.admin");
+
+        new CommandBase("gnemperature-disable", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.TEMPERATURE_DISABLED,
+                        "disabled temperature", "enabled temperature");
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/gnemperature-debugdebuffs";
             }
         }.setPermission("server.admin");
     }
