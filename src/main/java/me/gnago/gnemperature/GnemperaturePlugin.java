@@ -4,6 +4,7 @@ import me.gnago.gnemperature.api.PapiHelper;
 import me.gnago.gnemperature.api.GnemperatureExpansion;
 import me.gnago.gnemperature.command.CommandManager;
 import me.gnago.gnemperature.listener.TemperatureListener;
+import me.gnago.gnemperature.manager.TemperatureScheduler;
 import me.gnago.gnemperature.manager.file.ConfigData;
 import me.gnago.gnemperature.manager.file.PlayerSettingsFile;
 import me.gnago.gnemperature.manager.player.PlayerSettings;
@@ -40,6 +41,7 @@ public final class GnemperaturePlugin extends JavaPlugin {
         }
 
         getServer().getPluginManager().registerEvents(new TemperatureListener(), this);
+        //TemperatureScheduler.start();
         getLogger().info("Enabled Gnemperature");
     }
     @Override

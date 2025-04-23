@@ -24,9 +24,10 @@ public class GnemperatureExpansion extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        if (params.equalsIgnoreCase("feels")) {
-            return "0"; //todo: calculate player's feels temp and return
-        }
+        if (params.equalsIgnoreCase("feels"))
+            return String.valueOf(GnemperaturePlugin.getInstance().getPlayerData(player).feelsLike());
+        else if (params.equalsIgnoreCase("actual"))
+            return String.valueOf(GnemperaturePlugin.getInstance().getPlayerData(player).actuallyIs());
 
         return null;
     }

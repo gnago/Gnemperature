@@ -77,9 +77,15 @@ public class Temperature {
     public Temperature resist(double resistance) {
         for (Type type : Type.values())
             if (type != Type.CLOTHING) // Clothing cannot be resisted
-                set(type, 0); //todo Should this be 0 or 1?
-            //todo apply resistance set()
+                mult(type, resistance);
         return this;
+    }
+
+    public double total() {
+        double total = 0;
+        for (Type type : Type.values())
+            total += get(type);
+        return total;
     }
 }
 

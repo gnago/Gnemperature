@@ -1,9 +1,9 @@
 package me.gnago.gnemperature.manager.player;
 
 public interface PlayerTemperatureDisplay {
-    void showBossBar(boolean show);
+    void displayBossBar(boolean show);
     void updateBossBar();
 
-    void showScoreboard(boolean show);
+    void displayScoreboard(boolean show);
     void updateScoreboard();
 }

@@ -11,6 +11,7 @@ import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.boss.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -18,16 +19,17 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class PlayerData extends PlayerSettings implements PlayerMethods {
+public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerTemperatureDisplay {
     private final Temperature feelsLike;
     private final Temperature actuallyIs;
     private double wetness;
     private final HashMap<Integer,Debuff> scheduledDebuffs;
     private final ArrayList<Debuff> activeDebuffs;
+
+    private BossBar bossBar;
 
     private final Player player;
 
@@ -38,6 +40,15 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
         this.feelsLike = this.actuallyIs.copy();
         this.scheduledDebuffs = new HashMap<>();
         this.activeDebuffs = new ArrayList<>();
+        if (bossBar == null)
+            bossBar = Bukkit.createBossBar("Measuring...", BarColor.GREEN, BarStyle.SEGMENTED_20);
+    }
+
+    public double feelsLike() {
+        return feelsLike.total();
+    }
+    public double actuallyIs() {
+        return actuallyIs.total();
     }
 
     public void resetFeelsLike() {
@@ -56,7 +67,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
     @Override
     public void calcTemperature() {
         actuallyIs.set(new Temperature(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp()));
-        feelsLike.approach(actuallyIs);
+        //feelsLike.approach(actuallyIs);
         feelsLike.resist(applyEffectResistance(applyClothingResistance(applyCareResistance(1))));
     }
 
@@ -236,19 +247,19 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
         double temp = 0;
 
         // Can probably optimize this...
-        for (ItemStack armour : player.getInventory().getArmorContents()) {
-                for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
-                    if (mat.getPieces().contains(armour.getType())) {
-                        double addTemp = ConfigData.ClothingTypes.get(mat).warmth;
-                        if (armour.getType().getEquipmentSlot() == EquipmentSlot.CHEST)
-                            addTemp *= 1.6;
-                        else if (armour.getType().getEquipmentSlot() == EquipmentSlot.LEGS)
-                            addTemp *= 1.2;
+        for (ItemStack armour : getArmour()) {
+            for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
+                if (mat.getPieces().contains(armour.getType())) {
+                    double addTemp = ConfigData.ClothingTypes.get(mat).warmth;
+                    if (armour.getType().getEquipmentSlot() == EquipmentSlot.CHEST)
+                        addTemp *= 1.6;
+                    else if (armour.getType().getEquipmentSlot() == EquipmentSlot.LEGS)
+                        addTemp *= 1.2;
 
-                        temp += addTemp;
-                        break;
-                    }
+                    temp += addTemp;
+                    break;
                 }
+            }
         }
         return temp;
     }
@@ -256,7 +267,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
     @Override
     public double applyClothingResistance(double temp) {
         AtomicReference<Double> aTemp = new AtomicReference<>(temp);
-        for (ItemStack armour : player.getInventory().getArmorContents()) {
+        for (ItemStack armour : getArmour()) {
             for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
                 if (mat.getPieces().contains(armour.getType())) {
                     aTemp.set(TemperatureMethods.calcResist(temp, ConfigData.ClothingTypes.get(mat).resistance));
@@ -270,6 +281,10 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
             });
         }
         return aTemp.get();
+    }
+
+    private ItemStack[] getArmour() {
+        return Arrays.stream(player.getInventory().getArmorContents()).filter(Objects::nonNull).toArray(ItemStack[]::new);
     }
 
     @Override
@@ -306,9 +321,11 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
     @Override
     public double applyEffectResistance(double temp) {
         for (PotionEffect effect : player.getActivePotionEffects()) {
-            if (!ConfigData.ExcludeTurtleHelmetEffect ||
-                effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
-                temp = TemperatureMethods.calcResist(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier());
+            if (effect != null) {
+                if (!ConfigData.ExcludeTurtleHelmetEffect ||
+                    effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
+                    temp = TemperatureMethods.calcResist(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier());
+                }
             }
         }
         return Math.max(Math.min(temp, ConfigData.ResistTemperatureMax), ConfigData.ResistTemperatureMin);
@@ -352,8 +369,52 @@ public class PlayerData extends PlayerSettings implements PlayerMethods {
                 if (Bukkit.getScheduler().isQueued(id))
                     Bukkit.getScheduler().cancelTask(id);
                 // Might need to add this in case the task ran anyway or something
-                // debuff.cleat(player);
+                // debuff.clear(player);
             }
         });
+    }
+
+    @Override
+    public void displayBossBar(boolean show) {
+        boolean hasBossBar = bossBar.getPlayers().contains(player);
+        if (show && !hasBossBar)
+            bossBar.addPlayer(player);
+        else if (!show && hasBossBar)
+            bossBar.removePlayer(player);
+    }
+
+    @Override
+    public void updateBossBar() {
+        double feelsLike = feelsLike();
+        String title;
+        if (getSetting(Key.USE_CELSIUS)) {
+            title = String.format("%f.2 °C", TemperatureMethods.fahrToCel(feelsLike));
+            if (getSetting(Key.SHOW_ACTUAL)) {
+                title = String.format("%s / %1.2f °C", title, TemperatureMethods.fahrToCel(actuallyIs()));
+            }
+        } else {
+            title = String.format("%f.2 °F", feelsLike);
+            if (getSetting(Key.SHOW_ACTUAL)) {
+                title = String.format("%s / %1.2f °F", title, actuallyIs());
+            }
+        }
+        bossBar.setTitle(title);
+
+             if (feelsLike > 180) bossBar.setColor(BarColor.PINK);
+        else if (feelsLike > 120) bossBar.setColor(BarColor.RED);
+        else if (feelsLike >  80) bossBar.setColor(BarColor.YELLOW);
+        else if (feelsLike >  55) bossBar.setColor(BarColor.GREEN);
+        else if (feelsLike >  32) bossBar.setColor(BarColor.BLUE);
+        else if (feelsLike > -40) bossBar.setColor(BarColor.WHITE);
+        else                      bossBar.setColor(BarColor.PURPLE);
+    }
+
+    @Override
+    public void displayScoreboard(boolean show) {
+    }
+
+    @Override
+    public void updateScoreboard() {
+
     }
 }

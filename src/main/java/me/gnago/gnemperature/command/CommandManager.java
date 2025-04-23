@@ -2,6 +2,7 @@ package me.gnago.gnemperature.command;
 
 import me.gnago.gnemperature.GnemperaturePlugin;
 import me.gnago.gnemperature.manager.TemperatureMethods;
+import me.gnago.gnemperature.manager.TemperatureScheduler;
 import me.gnago.gnemperature.manager.player.PlayerSettings;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -144,13 +145,17 @@ public class CommandManager {
         new CommandBase("gnemperature-disable", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.TEMPERATURE_DISABLED,
-                        "disabled temperature", "enabled temperature");
+//                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.TEMPERATURE_DISABLED,
+//                        "disabled temperature", "enabled temperature");
+                if (TemperatureScheduler.isRunning())
+                    TemperatureScheduler.stop();
+                else
+                    TemperatureScheduler.start();
                 return true;
             }
 
             public @Override String initUsage() {
-                return "/gnemperature-debugdebuffs";
+                return "/gnemperature-disable";
             }
         }.setPermission("server.admin");
     }

@@ -2,6 +2,7 @@ refresh_rate: 20 # How often, in ticks, temperature gets recalculated
 enabled_worlds:
   - "WORLD"
   - "OVERWORLD"
+always_show_temperature: false # If true, players won't need a thermometer item to see the temperature
 indoor_temperature: 64 # Default Climate temperature when completely unexposed to skylight
 peak_temperature_time: 14000 # The time of day when Climate temperature is hottest (0-24000)
 weather:

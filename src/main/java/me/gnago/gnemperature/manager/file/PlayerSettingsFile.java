@@ -6,6 +6,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class PlayerSettingsFile {
             fileConfig = new YamlConfiguration();
             fileConfig.load(file);
             this.fileConfig = YamlConfiguration.loadConfiguration(file);
-        } catch (IOException | InvalidConfigurationException e) {
+        } catch (IOException | InvalidConfigurationException | YAMLException e) {
             GnemperaturePlugin.getInstance().getLogger().severe(filename + " cannot be read! Archiving and creating new file...");
             file.renameTo(new File(GnemperaturePlugin.getInstance().getDataFolder(), filename + ".old." + new Date().getTime()));
             file = createFile(filename);
