@@ -22,14 +22,7 @@ public class Temperature {
 
     public Temperature(double climate, double water, double wetness, double environment, double clothing, double tool, double activity, double state) {
         vector = new Vector<>();
-        set(Type.CLIMATE, climate);
-        set(Type.WATER, water);
-        set(Type.WETNESS, wetness);
-        set(Type.ENVIRONMENT, environment);
-        set(Type.CLOTHING, clothing);
-        set(Type.TOOL, tool);
-        set(Type.ACTIVITY, activity);
-        set(Type.STATE, state);
+        set(climate, water, wetness, environment, clothing, tool, activity, state);
     }
     public Temperature() {
         this(0,0,0,0,0,0,0,0);
@@ -45,6 +38,17 @@ public class Temperature {
         for (Type type : Type.values())
             set(type, target.get(type));
     }
+    public void set(double climate, double water, double wetness, double environment, double clothing, double tool, double activity, double state) {
+        set(Type.CLIMATE, climate);
+        set(Type.WATER, water);
+        set(Type.WETNESS, wetness);
+        set(Type.ENVIRONMENT, environment);
+        set(Type.CLOTHING, clothing);
+        set(Type.TOOL, tool);
+        set(Type.ACTIVITY, activity);
+        set(Type.STATE, state);
+    }
+
     public Temperature add(Type type, double value) {
         set(type, get(type) + value);
         return this;

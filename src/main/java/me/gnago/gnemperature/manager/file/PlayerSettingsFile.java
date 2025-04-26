@@ -41,9 +41,6 @@ public class PlayerSettingsFile {
         return file;
     }
 
-    public void prepPlayerSettings(PlayerSettings settings) {
-        prepPlayerSettings(settings, false);
-    }
     public void prepPlayerSettings(PlayerSettings settings, boolean save) {
         // Convert enum keys to strings
         HashMap<String,Boolean> stringSettings = new HashMap<>();

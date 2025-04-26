@@ -44,8 +44,10 @@ public class PlayerSettings {
         return playerUUID;
     }
 
-    public boolean toggleSetting(Key setting) {
+    public boolean toggleSetting(Key setting, boolean save) {
         settings.put(setting, !settings.getOrDefault(setting,true));
+        if (save)
+            GnemperaturePlugin.getInstance().getPlayerSettingsFile().prepPlayerSettings(this, true);
         return settings.get(setting);
     }
 }

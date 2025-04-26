@@ -3,7 +3,9 @@ package me.gnago.gnemperature.command;
 import me.gnago.gnemperature.GnemperaturePlugin;
 import me.gnago.gnemperature.manager.TemperatureMethods;
 import me.gnago.gnemperature.manager.TemperatureScheduler;
+import me.gnago.gnemperature.manager.file.ConfigData;
 import me.gnago.gnemperature.manager.player.PlayerSettings;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -32,10 +34,10 @@ public class CommandManager {
         new CommandBase("thermometer-help", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                ((Player)sender).sendRawMessage("&7/thermometer-toggleunits:&f Toggle between Celsius and Fahrenheit. &eRight click while holding a thermometer to toggle.");
-                ((Player)sender).sendRawMessage("&7/thermometer-showonlywhenholding:&f Toggle between whether the temperature shows only when you are holding a thermometer, or anytime it's anywhere in your inventory. &eRight click while crouching and holding a thermometer to toggle.");
-                ((Player)sender).sendRawMessage("&7/thermometer-showactual:&f By default you only see the temperature you are currently \"feeling\". For balance reasons, this doesn't match with the \"actual\" temperature of your surroundings. This setting toggles whether the \"actual\" temperature shows along side your \"feels\" temperature.");
-                ((Player)sender).sendRawMessage("&7/thermometer-locksettings:&f Locks whether right click changes thermometer settings while holding the thermometer.");
+                sender.sendMessage(ChatColor.GRAY+"/thermometer-toggleunits:"+ChatColor.RESET+" Toggle between Celsius and Fahrenheit. "+ChatColor.YELLOW+"Right click while holding a thermometer to toggle.");
+                sender.sendMessage(ChatColor.GRAY+"/thermometer-showonlywhenholding:"+ChatColor.RESET+" Toggle between whether the temperature shows only when you are holding a thermometer, or anytime it's anywhere in your inventory. "+ChatColor.YELLOW+"Right click while crouching and holding a thermometer to toggle.");
+                sender.sendMessage(ChatColor.GRAY+"/thermometer-showactual:"+ChatColor.RESET+" By default you only see the temperature you are currently \"feeling\". For balance reasons, this doesn't match with the \"actual\" temperature of your surroundings. This setting toggles whether the \"actual\" temperature shows along side your \"feels\" temperature.");
+                sender.sendMessage(ChatColor.GRAY+"/thermometer-locksettings:"+ChatColor.RESET+" Locks whether right click changes thermometer settings while holding the thermometer.");
                 return true;
             }
 
@@ -48,8 +50,8 @@ public class CommandManager {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
                 GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.LOCK_THERMOMETER,
-                        "&eThermometer will no longer switch modes on right-click. You can still use /thermometer-toggleunits and /thermometer-showonlywhenholding.",
-                        "&eThermometer will now change units on right-click, and toggle actual temperature on right-click while sneaking.");
+                        ChatColor.YELLOW+"Thermometer will no longer switch modes on right-click. You can still use /thermometer-toggleunits and /thermometer-showonlywhenholding.",
+                        ChatColor.YELLOW+"Thermometer will now change units on right-click, and toggle actual temperature on right-click while sneaking.");
                 return true;
             }
 
@@ -104,9 +106,9 @@ public class CommandManager {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
                 if (GnemperaturePlugin.getInstance().setThermometerItem(((Player)sender).getInventory().getItemInMainHand()))
-                    ((Player)sender).sendRawMessage("&aThermometer was successfully set!");
+                    sender.sendMessage(ChatColor.GREEN+"Thermometer was successfully set!");
                 else
-                    ((Player)sender).sendRawMessage("&cFailed to set thermometer.");
+                    sender.sendMessage(ChatColor.RED+"Failed to set thermometer.");
                 return true;
             }
 
@@ -115,10 +117,22 @@ public class CommandManager {
             }
         }.setPermission("server.admin");
 
+        new CommandBase("thermometer-give", true) {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                ((Player)sender).getInventory().addItem(ConfigData.ThermometerItem);
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/thermometer-give";
+            }
+        }.setPermission("server.admin");
+
         new CommandBase("gnemperature-debugboard", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                if (GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_MODE_ON)) {
+                if (GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_MODE_ON, true)) {
                     //todo turn on scoreboard if necessary
                 }
                 return true;
@@ -133,7 +147,7 @@ public class CommandManager {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
                 GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_DISABLE_DEBUFFS,
-                        "Debuffs are &cdisabled", "Debuffs are &2enabled");
+                        "Debuffs are " + ChatColor.RED + "disabled", "Debuffs are " + ChatColor.GREEN + "enabled");
                 return true;
             }
 
@@ -142,15 +156,17 @@ public class CommandManager {
             }
         }.setPermission("server.admin");
 
-        new CommandBase("gnemperature-disable", true) {
+        new CommandBase("gnemperature-disable") {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-//                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.TEMPERATURE_DISABLED,
-//                        "disabled temperature", "enabled temperature");
-                if (TemperatureScheduler.isRunning())
+                if (TemperatureScheduler.isRunning()) {
                     TemperatureScheduler.stop();
-                else
+                    sender.sendMessage(ChatColor.RED + "&cStopped Gnemperature.");
+                }
+                else {
                     TemperatureScheduler.start();
+                    sender.sendMessage(ChatColor.GREEN + "Started Gnemperature.");
+                }
                 return true;
             }
 

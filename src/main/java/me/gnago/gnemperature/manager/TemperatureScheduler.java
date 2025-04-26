@@ -31,8 +31,10 @@ public abstract class TemperatureScheduler {
     }
 
     public static void stop() {
-        if (taskId != -1)
+        if (taskId != -1) {
             Bukkit.getScheduler().cancelTask(taskId);
+            taskId = -1;
+        }
     }
 
     public static boolean isRunning() {

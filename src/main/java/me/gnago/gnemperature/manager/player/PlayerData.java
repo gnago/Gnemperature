@@ -56,9 +56,9 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     }
 
     public boolean toggleSetting(Key setting, String onMessage, String offMessage) {
-        boolean on = toggleSetting(setting);
+        boolean on = toggleSetting(setting, true);
         if (on)
-            player.sendRawMessage(onMessage);
+            player.sendMessage(onMessage);
         else
             player.sendMessage(offMessage);
         return on;
@@ -66,8 +66,8 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     @Override
     public void calcTemperature() {
-        actuallyIs.set(new Temperature(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp()));
-        //feelsLike.approach(actuallyIs);
+        actuallyIs.set(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
+        feelsLike.approach(actuallyIs);
         feelsLike.resist(applyEffectResistance(applyClothingResistance(applyCareResistance(1))));
     }
 
@@ -321,7 +321,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     @Override
     public double applyEffectResistance(double temp) {
         for (PotionEffect effect : player.getActivePotionEffects()) {
-            if (effect != null) {
+            if (effect != null && ConfigData.ResistanceEffects.containsKey(effect)) {
                 if (!ConfigData.ExcludeTurtleHelmetEffect ||
                     effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
                     temp = TemperatureMethods.calcResist(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier());

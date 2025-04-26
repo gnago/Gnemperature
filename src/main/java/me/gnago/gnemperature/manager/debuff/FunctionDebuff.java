@@ -15,6 +15,7 @@ public class FunctionDebuff extends Debuff {
     protected HashMap<LivingEntity,Integer> repeatingDebuffIds;
     public FunctionDebuff(Collection<Double> thresholds, int delay) {
         super(thresholds, delay);
+        repeatingDebuffIds = new HashMap<>();
     }
 
     public FunctionDebuff setFunctions(int applicationFrequency, Consumer<LivingEntity> applyFn, Consumer<LivingEntity> clearFn) {

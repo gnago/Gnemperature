@@ -3,6 +3,7 @@ package me.gnago.gnemperature.manager;
 import me.gnago.gnemperature.GnemperaturePlugin;
 import me.gnago.gnemperature.manager.file.ConfigData;
 import me.gnago.gnemperature.manager.player.PlayerSettings;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -117,16 +118,16 @@ public class TemperatureMethods {
 
     public static boolean toggleUnits(Player p) {
         return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.USE_CELSIUS,
-                "&eNow using °C", "&eNow using °F");
+                ChatColor.YELLOW+"Now using °C", ChatColor.YELLOW+"Now using °F");
     }
     public static boolean toggleShowFromInventory(Player p) {
         return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.SHOW_FROM_INVENTORY,
-                "&eTemperature is now always displayed if you have a thermometer in your inventory",
-                "&eTemperature is now only displayed when holding a thermometer");
+                ChatColor.YELLOW+"Temperature is now always displayed if you have a thermometer in your inventory",
+                ChatColor.YELLOW+"Temperature is now only displayed when holding a thermometer");
     }
     public static boolean toggleShowActual(Player p) {
         return GnemperaturePlugin.getInstance().getPlayerData(p).toggleSetting(PlayerSettings.Key.SHOW_ACTUAL,
-                "&eNow additionally showing \"Actual Temperature\" (Feels/Actual)",
-                "&eHiding \"Actual Temperature\"");
+                ChatColor.YELLOW+"Now additionally showing \"Actual Temperature\" (Feels/Actual)",
+                ChatColor.YELLOW+"Hiding \"Actual Temperature\"");
     }
 }
