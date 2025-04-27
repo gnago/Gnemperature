@@ -70,7 +70,7 @@ public class Temperature {
 
     public Temperature approach(Temperature target) {
         for (Type type : Type.values())
-            set(type, calcLogGradual(get(type), target.get(type), gradualityRates.get(type)));
+            set(type, Math.round(calcLogGradual(get(type), target.get(type), gradualityRates.get(type)) * 1000) / 1000.0);
         return this;
     }
     private double calcLogGradual(double current, double target, double rate) {

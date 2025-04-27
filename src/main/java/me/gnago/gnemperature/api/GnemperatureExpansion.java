@@ -9,12 +9,12 @@ import org.jetbrains.annotations.Nullable;
 public class GnemperatureExpansion extends PlaceholderExpansion {
     @Override
     public @NotNull String getIdentifier() {
-        return "gnemperature";
+        return GnemperaturePlugin.getInstance().getDescription().getName();
     }
 
     @Override
     public @NotNull String getAuthor() {
-        return "gnago";
+        return String.join(", ", GnemperaturePlugin.getInstance().getDescription().getAuthors());
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumSet;
 import java.util.function.Function;
 
 public class TemperatureMethods {
@@ -25,23 +26,35 @@ public class TemperatureMethods {
         // So just reset dry biomes to just above 1
         return Math.min(block.getTemperature(), 1.1);
     }
-    public static double calcResist(double initTemp, double resistFactor, double amplifier) {
+
+    public enum ResistType { BOTH, COLD, HOT }
+    public static double calcResistPercent(double initTemp, double resistFactor, double amplifier, EnumSet<ResistType> resistSet) {
         // Only check for hot/cold resist if temperature warrants resistance
         double resistPercent = 1; // the percent to reduce the temp to. If it remains 1, it maintains 100% of its value
 
         if (resistFactor > 1 && resistFactor <= 2) { //If modifier is ]1,2] then resist all
             resistPercent = Math.pow(2 - resistFactor, amplifier);
+            resistSet.add(ResistType.BOTH);
         }
         else if (resistFactor >= -1 && resistFactor < 0) { // If factor is [-1,0[ then resist cold
-            if (initTemp >= ConfigData.IdealTemperature) // Don't attempt resisting cold if the player is not cold
+            if (initTemp >= ConfigData.IdealTemperature) { // Don't attempt resisting cold if the player is not cold
                 resistPercent = Math.pow(1 - Math.abs(resistFactor), amplifier);
+                resistSet.add(ResistType.COLD);
+            }
         }
         else if (resistFactor > 0 && resistFactor <= 1) { // If factor is ]0,1] then resist hot
-            if (initTemp <= ConfigData.IdealTemperature) // Don't attempt resisting heat if the player is not hot
+            if (initTemp <= ConfigData.IdealTemperature) { // Don't attempt resisting heat if the player is not hot
                 resistPercent = Math.pow(1 - resistFactor, amplifier);
+                resistSet.add(ResistType.HOT);
+            }
         }
-
-        return calcResistBasic(initTemp, resistPercent);
+        return resistPercent;
+    }
+    public static double calcResist(double initTemp, double resistFactor, double amplifier, EnumSet<ResistType> resistSet) {
+        return calcResistBasic(initTemp, calcResistPercent(initTemp, resistFactor, amplifier, resistSet));
+    }
+    public static double calcResist(double initTemp, double resistFactor, double amplifier) {
+        return calcResist(initTemp, resistFactor, amplifier, EnumSet.noneOf(ResistType.class));
     }
     public static double calcResist(double initTemp, double resistFactor) {
         return calcResist(initTemp, resistFactor, 1);

@@ -132,9 +132,9 @@ public class CommandManager {
         new CommandBase("gnemperature-debugboard", true) {
             @Override
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
-                if (GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_MODE_ON, true)) {
-                    //todo turn on scoreboard if necessary
-                }
+                GnemperaturePlugin.getInstance().getPlayerData((Player)sender).displayScoreboard(
+                    GnemperaturePlugin.getInstance().getPlayerData((Player)sender).toggleSetting(PlayerSettings.Key.DEBUG_MODE_ON, true)
+                );
                 return true;
             }
 
@@ -161,7 +161,7 @@ public class CommandManager {
             public boolean onCommand(@NotNull CommandSender sender, String[] args) {
                 if (TemperatureScheduler.isRunning()) {
                     TemperatureScheduler.stop();
-                    sender.sendMessage(ChatColor.RED + "&cStopped Gnemperature.");
+                    sender.sendMessage(ChatColor.RED + "Stopped Gnemperature.");
                 }
                 else {
                     TemperatureScheduler.start();
@@ -172,6 +172,18 @@ public class CommandManager {
 
             public @Override String initUsage() {
                 return "/gnemperature-disable";
+            }
+        }.setPermission("server.admin");
+
+        new CommandBase("gnemperature-next") {
+            @Override
+            public boolean onCommand(@NotNull CommandSender sender, String[] args) {
+                TemperatureScheduler.update();
+                return true;
+            }
+
+            public @Override String initUsage() {
+                return "/gnemperature-next";
             }
         }.setPermission("server.admin");
     }

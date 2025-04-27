@@ -1,5 +1,6 @@
 name: 'Gnemperature'
 description: 'Temperature plugin that calculates a player''s temperature using various factors and applies debuffs at extremes.'
+authors: [gnago]
 version: '${project.version}'
 main: me.gnago.gnemperature.GnemperaturePlugin
 api-version: 1.13

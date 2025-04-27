@@ -7,23 +7,29 @@ import org.bukkit.Bukkit;
 
 public abstract class TemperatureScheduler {
     private static int taskId = -1;
+
+    public static void update() {
+        GnemperaturePlugin.getInstance().getPlayerData().forEach((player, data) -> {
+            double prevFeels = data.feelsLike();
+            data.calcTemperature();
+
+            if (!data.getSetting(PlayerSettings.Key.DEBUG_DISABLE_DEBUFFS))
+                data.applyDebuffs(prevFeels, data.feelsLike());
+
+            data.displayBossBar(ConfigData.AlwaysShowTemperature ||
+                    (data.getSetting(PlayerSettings.Key.SHOW_FROM_INVENTORY) && player.getInventory().contains(ConfigData.ThermometerItem)) ||
+                    TemperatureMethods.isThermometer(player.getInventory().getItemInMainHand()) || TemperatureMethods.isThermometer(player.getInventory().getItemInOffHand()));
+
+            data.updateBossBar();
+            if (data.getSetting(PlayerSettings.Key.DEBUG_MODE_ON))
+                data.updateScoreboard();
+        });
+    }
+
     public static boolean start(long delay) {
         if (taskId == -1)
-            taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(GnemperaturePlugin.getInstance(), () -> {
-                GnemperaturePlugin.getInstance().getPlayerData().forEach((player, data) -> {
-                    double prevFeels = data.feelsLike();
-                    data.calcTemperature();
-
-                    if (!data.getSetting(PlayerSettings.Key.DEBUG_DISABLE_DEBUFFS))
-                        data.applyDebuffs(prevFeels, data.feelsLike());
-
-                    data.displayBossBar(ConfigData.AlwaysShowTemperature ||
-                            (data.getSetting(PlayerSettings.Key.SHOW_FROM_INVENTORY) && player.getInventory().contains(ConfigData.ThermometerItem)) ||
-                            TemperatureMethods.isThermometer(player.getInventory().getItemInMainHand()) || TemperatureMethods.isThermometer(player.getInventory().getItemInOffHand()));
-
-                    data.updateBossBar();
-                });
-            }, delay, ConfigData.RefreshRate);
+            taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(GnemperaturePlugin.getInstance(),
+                    TemperatureScheduler::update, delay, ConfigData.RefreshRate);
         return taskId != -1;
     }
     public static boolean start() {
@@ -34,6 +40,13 @@ public abstract class TemperatureScheduler {
         if (taskId != -1) {
             Bukkit.getScheduler().cancelTask(taskId);
             taskId = -1;
+
+            //Clean up
+            GnemperaturePlugin.getInstance().getPlayerData().forEach((p, d) -> {
+                d.resetFeelsLike();
+                d.removeAllDebuffs();
+            });
+            update();
         }
     }
 

@@ -1,5 +1,6 @@
 package me.gnago.gnemperature.manager.player;
 
+import fr.mrmicky.fastboard.FastBoard;
 import me.gnago.gnemperature.GnemperaturePlugin;
 import me.gnago.gnemperature.api.PapiHelper;
 import me.gnago.gnemperature.manager.ClothingType;
@@ -9,6 +10,7 @@ import me.gnago.gnemperature.manager.debuff.Debuff;
 import me.gnago.gnemperature.manager.debuff.DebuffRegistry;
 import me.gnago.gnemperature.manager.file.ConfigData;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.boss.*;
@@ -19,6 +21,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -30,6 +33,12 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     private final ArrayList<Debuff> activeDebuffs;
 
     private BossBar bossBar;
+    private FastBoard board;
+    private final String[] debugLines;
+    private StringBuilder debugClothingResistance;
+    private StringBuilder debugEffectResistance;
+    private StringBuilder debugCareResistance;
+    private static final DecimalFormat df = new DecimalFormat("0.##");
 
     private final Player player;
 
@@ -42,6 +51,10 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         this.activeDebuffs = new ArrayList<>();
         if (bossBar == null)
             bossBar = Bukkit.createBossBar("Measuring...", BarColor.GREEN, BarStyle.SEGMENTED_20);
+
+        debugLines = new String[15];
+        if (getSetting(Key.DEBUG_MODE_ON))
+            displayScoreboard(true);
     }
 
     public double feelsLike() {
@@ -66,16 +79,37 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     @Override
     public void calcTemperature() {
+        debugClothingResistance = new StringBuilder();
+        debugEffectResistance = new StringBuilder();
+        debugCareResistance = new StringBuilder();
+
         actuallyIs.set(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
         feelsLike.approach(actuallyIs);
-        feelsLike.resist(applyEffectResistance(applyClothingResistance(applyCareResistance(1))));
+        double resistTotal = applyEffectResistance(applyClothingResistance(applyCareResistance(1)));
+        feelsLike.resist(resistTotal);
+
+
+        setDebugLine(2, "Sun/Clm", String.format("%d: %s/%s", player.getLocation().getBlock().getLightFromSky(), df.format(feelsLike.get(Temperature.Type.CLIMATE)), df.format(actuallyIs.get(Temperature.Type.CLIMATE))));
+        setDebugLine(3, "Wet", String.format("%s/%s: %s/%s", df.format(wetness), df.format(ConfigData.WetnessMax), df.format(feelsLike.get(Temperature.Type.WETNESS)), df.format(actuallyIs.get(Temperature.Type.WETNESS))));
+        setDebugLine(4, "Water", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.WATER)), df.format(actuallyIs.get(Temperature.Type.WATER))));
+        setDebugLine(5, "Env", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.ENVIRONMENT)), df.format(actuallyIs.get(Temperature.Type.ENVIRONMENT))));
+        setDebugLine(6, "Activity", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.ACTIVITY)), df.format(actuallyIs.get(Temperature.Type.ACTIVITY))));
+        setDebugLine(7, "State", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.STATE)), df.format(actuallyIs.get(Temperature.Type.STATE))));
+        setDebugLine(8, "Tool", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.TOOL)), df.format(actuallyIs.get(Temperature.Type.TOOL))));
+        setDebugLine(9, "Cloth", String.format("%s/%s %s", df.format(feelsLike.get(Temperature.Type.CLOTHING)), df.format(actuallyIs.get(Temperature.Type.CLOTHING)), debugClothingResistance));
+        setDebugLine(10, "Resist", String.format("%s %s", debugEffectResistance, debugCareResistance));
+        setDebugLine(11, "ResistTotal", df.format(resistTotal));
+        setDebugLine(12, "Total", String.format("%s/%s", df.format(feelsLike.total()), df.format(actuallyIs.total())));
     }
 
     @Override
     public double calcClimateTemp() {
         // 15 = maximum possible light from sky
         double climateExposure = Math.pow(player.getLocation().getBlock().getLightFromSky(),2)/Math.pow(15,2);
-        double temp = calcWeatherTemp(calcTimeHeat());
+        double timeHeat = calcTimeHeat();
+        double temp = calcWeatherTemp(timeHeat);
+
+        setDebugLine(1, "Time Temp", String.format("%d: %s", player.getWorld().getTime()/10, df.format(timeHeat)));
 
         return temp * climateExposure + ConfigData.IndoorTemperature * (1 - climateExposure);
     }
@@ -84,6 +118,8 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         double humidityFactor = 1 - player.getLocation().getBlock().getHumidity()/2;
         double biomeTemp = TemperatureMethods.getBiomeTemp(player.getLocation().getBlock());
         double biomeFactor = Math.abs(biomeTemp);
+
+        setDebugLine(0, "Biome Temp/Hum", String.format("%s/%s", df.format(biomeTemp), df.format(humidityFactor)));
 
         return 10 * Math.cos(
                 Math.PI * (player.getWorld().getTime() - ConfigData.PeakTemperatureTime)/12000) *
@@ -267,20 +303,29 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     @Override
     public double applyClothingResistance(double temp) {
         AtomicReference<Double> aTemp = new AtomicReference<>(temp);
+        AtomicReference<Double> totalRes = new AtomicReference<>(0.0);
+        EnumSet<TemperatureMethods.ResistType> resistSet = EnumSet.noneOf(TemperatureMethods.ResistType.class);
         for (ItemStack armour : getArmour()) {
             for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
                 if (mat.getPieces().contains(armour.getType())) {
-                    aTemp.set(TemperatureMethods.calcResist(temp, ConfigData.ClothingTypes.get(mat).resistance));
-                    break;
+                    totalRes.updateAndGet(v -> v + TemperatureMethods.calcResistPercent(aTemp.get(), ConfigData.ClothingTypes.get(mat).resistance, 1, resistSet));
+                    break; // Armour can only be of one type
                 }
             }
             ConfigData.ResistanceEnchantments.forEach((enchant, res) -> {
                 if (armour.containsEnchantment(enchant)) {
-                    aTemp.set(TemperatureMethods.calcResist(aTemp.get(), res, armour.getEnchantmentLevel(enchant)));
+                    totalRes.updateAndGet(v -> v + TemperatureMethods.calcResistPercent(aTemp.get(), res, armour.getEnchantmentLevel(enchant), resistSet));
                 }
             });
         }
-        return aTemp.get();
+        temp = TemperatureMethods.calcResistBasic(temp, totalRes.get());
+        debugClothingResistance.append(ChatColor.LIGHT_PURPLE).append("Res ").append(ChatColor.RESET)
+                .append(df.format((1-totalRes.get())*100)).append("%");
+        if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.COLD))
+            debugClothingResistance.append(ChatColor.AQUA).append(" C");
+        if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.HOT))
+            debugClothingResistance.append(ChatColor.RED).append(" H");
+        return temp;
     }
 
     private ItemStack[] getArmour() {
@@ -290,8 +335,11 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     @Override
     public double applyCareResistance(double temp) {
         // Hunger
-        temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.HungerMidPoint, 20,
-                player.getFoodLevel(), ConfigData.HungerMaxResist, ConfigData.HungerMaxVuln));
+        double resistPercent = calcCareResistance(ConfigData.HungerMidPoint, 20,
+                player.getFoodLevel(), ConfigData.HungerMaxResist, ConfigData.HungerMaxVuln);
+        temp = TemperatureMethods.calcResistBasic(temp, resistPercent);
+
+        debugCareResistance.append(ChatColor.GOLD).append("H").append(ChatColor.RESET).append(df.format(0 - (resistPercent - 1) * 100)).append("%");
 
         PapiHelper papi = GnemperaturePlugin.getInstance().getPapiHelper();
         if (papi != null) { // If PlaceholderAPI was enabled on startup
@@ -300,8 +348,11 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
                     try {
                         double thirstLevel = papi.getPlaceholderDouble(player, "%thirstbar_current_int%");
                         double thirstMax = papi.getPlaceholderDouble(player, "%thirstbar_max_int%");
-                        temp = TemperatureMethods.calcResistBasic(temp, calcCareResistance(ConfigData.ThirstMidPoint, thirstMax,
-                                thirstLevel, ConfigData.ThirstMaxResist, ConfigData.ThirstMaxVuln));
+                        resistPercent = calcCareResistance(ConfigData.ThirstMidPoint, thirstMax,
+                                thirstLevel, ConfigData.ThirstMaxResist, ConfigData.ThirstMaxVuln);
+                        temp = TemperatureMethods.calcResistBasic(temp, resistPercent);
+
+                        debugCareResistance.append(ChatColor.AQUA).append("T").append(ChatColor.RESET).append(df.format(0-(resistPercent-1)*100)).append("%");
                     } catch (NumberFormatException e) {
                         GnemperaturePlugin.getInstance().getLogger().warning("Failed to retrieve ThirstBar Placeholders");
                     }
@@ -320,15 +371,27 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     @Override
     public double applyEffectResistance(double temp) {
+        double resistPercent = 0;
+        EnumSet<TemperatureMethods.ResistType> resistSet = EnumSet.noneOf(TemperatureMethods.ResistType.class);
         for (PotionEffect effect : player.getActivePotionEffects()) {
             if (effect != null && ConfigData.ResistanceEffects.containsKey(effect)) {
                 if (!ConfigData.ExcludeTurtleHelmetEffect ||
                     effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
-                    temp = TemperatureMethods.calcResist(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier());
+                    resistPercent += TemperatureMethods.calcResistPercent(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier(), resistSet);
                 }
             }
         }
-        return Math.max(Math.min(temp, ConfigData.ResistTemperatureMax), ConfigData.ResistTemperatureMin);
+        if (!resistSet.isEmpty()) {
+            debugEffectResistance.append(ChatColor.LIGHT_PURPLE).append("E ").append(ChatColor.RESET).append(df.format((1-resistPercent)*100.0)).append("%");
+            if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.COLD))
+                debugClothingResistance.append(ChatColor.AQUA).append(" C");
+            if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.HOT))
+                debugClothingResistance.append(ChatColor.RED).append(" H");
+
+            temp = TemperatureMethods.calcResistBasic(temp, resistPercent);
+            temp = Math.max(Math.min(temp, ConfigData.ResistTemperatureMax), ConfigData.ResistTemperatureMin);
+        }
+        return temp;
     }
 
     @Override
@@ -373,6 +436,13 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
             }
         });
     }
+    public void removeAllDebuffs() {
+        scheduledDebuffs.forEach((id, debuff) -> {
+                scheduledDebuffs.remove(id);
+                if (Bukkit.getScheduler().isQueued(id))
+                    Bukkit.getScheduler().cancelTask(id);
+        });
+    }
 
     @Override
     public void displayBossBar(boolean show) {
@@ -386,19 +456,19 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     @Override
     public void updateBossBar() {
         double feelsLike = feelsLike();
-        String title;
+        StringBuilder title;
         if (getSetting(Key.USE_CELSIUS)) {
-            title = String.format("%f.2 °C", TemperatureMethods.fahrToCel(feelsLike));
+            title = new StringBuilder(df.format(TemperatureMethods.fahrToCel(feelsLike))).append(" °C");
             if (getSetting(Key.SHOW_ACTUAL)) {
-                title = String.format("%s / %1.2f °C", title, TemperatureMethods.fahrToCel(actuallyIs()));
+                title.append(" / ").append(df.format(TemperatureMethods.fahrToCel(actuallyIs()))).append(" °C");
             }
         } else {
-            title = String.format("%f.2 °F", feelsLike);
+            title = new StringBuilder(String.valueOf(feelsLike)).append(" °F");
             if (getSetting(Key.SHOW_ACTUAL)) {
-                title = String.format("%s / %1.2f °F", title, actuallyIs());
+                title.append(" / ").append(df.format(actuallyIs())).append(" °F");
             }
         }
-        bossBar.setTitle(title);
+        bossBar.setTitle(title.toString());
 
              if (feelsLike > 180) bossBar.setColor(BarColor.PINK);
         else if (feelsLike > 120) bossBar.setColor(BarColor.RED);
@@ -411,10 +481,30 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     @Override
     public void displayScoreboard(boolean show) {
+        if (show) {
+            if (board == null || board.isDeleted()) {
+                board = new FastBoard(player);
+                board.updateTitle(ChatColor.DARK_AQUA+"Temperature Factors"+ChatColor.RESET+" (f/a)");
+            }
+            updateScoreboard();
+        } else {
+            if (board != null && !board.isDeleted())
+                board.delete();
+        }
     }
 
     @Override
     public void updateScoreboard() {
-
+        if (board != null) {
+            for (int i = 0; i < debugLines.length; i++) {
+                if (debugLines[i] != null && !debugLines[i].isEmpty())
+                    board.updateLine(i, debugLines[i]);
+            }
+        }
+    }
+    private void setDebugLine(int index, String name, String value) {
+        if (index >= 0 && index < debugLines.length) {
+            debugLines[index] = ChatColor.GRAY+name+": "+ChatColor.RESET+value;
+        }
     }
 }
