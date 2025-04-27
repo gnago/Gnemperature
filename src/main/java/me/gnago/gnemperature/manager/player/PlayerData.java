@@ -86,7 +86,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         actuallyIs.set(calcClimateTemp(), calcWetnessTemp(), calcWaterTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
         feelsLike.approach(actuallyIs);
         double resistTotal = applyEffectResistance(applyClothingResistance(applyCareResistance(1)));
-        feelsLike.resist(resistTotal);
+        //feelsLike.resist(resistTotal);
 
 
         setDebugLine(2, "Sun/Clm", String.format("%d: %s/%s", player.getLocation().getBlock().getLightFromSky(), df.format(feelsLike.get(Temperature.Type.CLIMATE)), df.format(actuallyIs.get(Temperature.Type.CLIMATE))));
@@ -109,7 +109,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         double timeHeat = calcTimeHeat();
         double temp = calcWeatherTemp(timeHeat);
 
-        setDebugLine(1, "Time Temp", String.format("%d: %s", player.getWorld().getTime()/10, df.format(timeHeat)));
+        setDebugLine(1, "Time Temp", String.format("%d: %s", getTime(), df.format(timeHeat)));
 
         return temp * climateExposure + ConfigData.IndoorTemperature * (1 - climateExposure);
     }
@@ -121,11 +121,25 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
         setDebugLine(0, "Biome Temp/Hum", String.format("%s/%s", df.format(biomeTemp), df.format(humidityFactor)));
 
+        // 1200 = noon
+        // Use this graph to help visualize this formula https://www.desmos.com/calculator/xlzpwluttr
         return 10 * Math.cos(
-                Math.PI * (player.getWorld().getTime() - ConfigData.PeakTemperatureTime)/12000) *
+                Math.PI * (getTime() - ConfigData.PeakTemperatureTime)/1200) *
                 humidityFactor * (biomeFactor + 1) * (biomeTemp + 1) +
                 32 * biomeTemp * biomeFactor / humidityFactor +
                 32 * (biomeTemp + 1 - biomeFactor);
+    }
+
+    /**
+     *
+     * @return time formated as HHMM. e.g. 19000, an hour past midnight, will return as 100
+     */
+    private long getTime() {
+        long time = player.getWorld().getTime()/10;
+        time += 600;
+        if (time >= 2400)
+            time -= 2400;
+        return time;
     }
     private double calcWeatherTemp(double temp) {
         if (!player.getWorld().isClearWeather()) {
@@ -419,21 +433,23 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
             }
         });
 
+        // clear active debuffs
         ArrayList<Debuff> removeDebuffs = DebuffRegistry.getDebuffsWithThresholdsUncrossed(prevTemp, currTemp);
-        activeDebuffs.forEach(debuff -> {
-            if (removeDebuffs.contains(debuff)) {
-                activeDebuffs.remove(debuff);
-                debuff.clear(player);
-            }
-        });
+        removeDebuffs.forEach(debuff -> debuff.clear(player));
+        activeDebuffs.removeAll(removeDebuffs);
+
+        // cancel any incoming debuffs
+        ArrayList<Integer> removeIds = new ArrayList<>();
         scheduledDebuffs.forEach((id, debuff) -> {
-            if (removeDebuffs.contains(debuff)) {
-                scheduledDebuffs.remove(id);
-                if (Bukkit.getScheduler().isQueued(id))
-                    Bukkit.getScheduler().cancelTask(id);
-                // Might need to add this in case the task ran anyway or something
-                // debuff.clear(player);
-            }
+            if (removeDebuffs.contains(debuff))
+                removeIds.add(id);
+        });
+        removeIds.forEach(id -> {
+            scheduledDebuffs.remove(id);
+            if (Bukkit.getScheduler().isQueued(id))
+                Bukkit.getScheduler().cancelTask(id);
+            // Might need to add this in case the task ran anyway or something
+            // debuff.clear(player);
         });
     }
     public void removeAllDebuffs() {
@@ -463,7 +479,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
                 title.append(" / ").append(df.format(TemperatureMethods.fahrToCel(actuallyIs()))).append(" °C");
             }
         } else {
-            title = new StringBuilder(String.valueOf(feelsLike)).append(" °F");
+            title = new StringBuilder(df.format(feelsLike)).append(" °F");
             if (getSetting(Key.SHOW_ACTUAL)) {
                 title.append(" / ").append(df.format(actuallyIs())).append(" °F");
             }
