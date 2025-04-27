@@ -83,7 +83,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         debugEffectResistance = new StringBuilder();
         debugCareResistance = new StringBuilder();
 
-        actuallyIs.set(calcClimateTemp(), calcWaterTemp(), calcWetnessTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
+        actuallyIs.set(calcClimateTemp(), calcWetnessTemp(), calcWaterTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
         feelsLike.approach(actuallyIs);
         double resistTotal = applyEffectResistance(applyClothingResistance(applyCareResistance(1)));
         feelsLike.resist(resistTotal);

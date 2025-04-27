@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.error.YAMLException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -61,10 +62,10 @@ public class PlayerSettingsFile {
             return false;
         }
     }
-    public HashMap<PlayerSettings.Key,Boolean> loadSettings(UUID playerUUID, boolean createIfNotFound) {
+    public EnumMap<PlayerSettings.Key,Boolean> loadSettings(UUID playerUUID, boolean createIfNotFound) {
         ConfigurationSection settingsSection = fileConfig.getConfigurationSection(playerUUID.toString());
         if (settingsSection != null) {
-            HashMap<PlayerSettings.Key,Boolean> settings = new HashMap<>();
+            EnumMap<PlayerSettings.Key,Boolean> settings = new EnumMap<>(PlayerSettings.Key.class);
             for (PlayerSettings.Key key : PlayerSettings.Key.values())
                 settings.put(key, settingsSection.getBoolean(key.name(), false));
             return settings;

@@ -1,13 +1,13 @@
 package me.gnago.gnemperature.manager;
 
-import java.util.Vector;
+import java.util.EnumMap;
 
 public class Temperature {
 
     public enum Type {
         CLIMATE,
-        WATER,
         WETNESS,
+        WATER,
         ENVIRONMENT,
         CLOTHING,
         TOOL,
@@ -18,30 +18,30 @@ public class Temperature {
     private static Temperature gradualityRates = new Temperature(1,1,1,1,1,1,1,1);
     public static void setGradualityRates(Temperature rates) { gradualityRates = rates; }
 
-    private final Vector<Double> vector;
+    private final EnumMap<Type,Double> map;
 
-    public Temperature(double climate, double water, double wetness, double environment, double clothing, double tool, double activity, double state) {
-        vector = new Vector<>();
-        set(climate, water, wetness, environment, clothing, tool, activity, state);
+    public Temperature(double climate, double wetness, double water, double environment, double clothing, double tool, double activity, double state) {
+        map = new EnumMap<>(Type.class);
+        set(climate, wetness, water, environment, clothing, tool, activity, state);
     }
     public Temperature() {
         this(0,0,0,0,0,0,0,0);
     }
 
     public double get(Type type) {
-        return vector.get(type.ordinal());
+        return map.get(type);
     }
     public void set(Type type, double value) {
-        vector.insertElementAt(value, type.ordinal());
+        map.put(type, value);
     }
     public void set(Temperature target) {
         for (Type type : Type.values())
             set(type, target.get(type));
     }
-    public void set(double climate, double water, double wetness, double environment, double clothing, double tool, double activity, double state) {
+    public void set(double climate, double wetness, double water, double environment, double clothing, double tool, double activity, double state) {
         set(Type.CLIMATE, climate);
-        set(Type.WATER, water);
         set(Type.WETNESS, wetness);
+        set(Type.WATER, water);
         set(Type.ENVIRONMENT, environment);
         set(Type.CLOTHING, clothing);
         set(Type.TOOL, tool);
@@ -65,7 +65,7 @@ public class Temperature {
     }
 
     public Temperature copy() {
-        return new Temperature(get(Type.CLIMATE), get(Type.WATER), get(Type.WETNESS), get(Type.ENVIRONMENT), get(Type.CLOTHING), get(Type.TOOL), get(Type.ACTIVITY), get(Type.STATE));
+        return new Temperature(get(Type.CLIMATE), get(Type.WETNESS), get(Type.WATER), get(Type.ENVIRONMENT), get(Type.CLOTHING), get(Type.TOOL), get(Type.ACTIVITY), get(Type.STATE));
     }
 
     public Temperature approach(Temperature target) {

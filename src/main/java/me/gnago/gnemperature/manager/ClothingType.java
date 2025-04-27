@@ -2,7 +2,10 @@ package me.gnago.gnemperature.manager;
 
 import org.bukkit.Material;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
 
 public class ClothingType {
     public final MaterialType material;

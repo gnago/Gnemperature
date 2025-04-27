@@ -2,7 +2,7 @@ package me.gnago.gnemperature.manager.player;
 
 import me.gnago.gnemperature.GnemperaturePlugin;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.UUID;
 
 public class PlayerSettings {
@@ -17,7 +17,7 @@ public class PlayerSettings {
     }
 
     private final UUID playerUUID;
-    private final HashMap<Key,Boolean> settings;
+    private final EnumMap<Key,Boolean> settings;
 
     public PlayerSettings(UUID playerUUID, boolean loadFromFile) {
         this.playerUUID = playerUUID;
@@ -33,8 +33,8 @@ public class PlayerSettings {
     public Boolean getSetting(Key key) {
         return settings.get(key);
     }
-    public static HashMap<Key,Boolean> getDefaultSettings() {
-        HashMap<Key,Boolean> defaultSettings = new HashMap<>();
+    public static EnumMap<Key,Boolean> getDefaultSettings() {
+        EnumMap<Key,Boolean> defaultSettings = new EnumMap<>(Key.class);
         for (Key key : Key.values())
             defaultSettings.put(key, false);
         return defaultSettings;

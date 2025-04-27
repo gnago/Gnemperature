@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 
 public class ConfigData {
@@ -61,14 +62,14 @@ public class ConfigData {
     public static double ThirstMaxVuln;
 
     public static double MinimumBoilerTemperature;
-    public static HashMap<Material,Double> BlockTemperatures;
-    public static HashMap<Material,Double> ItemTemperatures;
+    public static EnumMap<Material,Double> BlockTemperatures;
+    public static EnumMap<Material,Double> ItemTemperatures;
 
     public static HashMap<PotionEffect,Double> ResistanceEffects;
     public static boolean ExcludeTurtleHelmetEffect;
 
     public static HashMap<Enchantment,Double> ResistanceEnchantments;
-    public static HashMap<ClothingType.MaterialType,ClothingType> ClothingTypes;
+    public static EnumMap<ClothingType.MaterialType,ClothingType> ClothingTypes;
 
     public static int DebuffGracePeriod;
 
@@ -105,8 +106,8 @@ public class ConfigData {
 
         Temperature.setGradualityRates(new Temperature(
                 config.getDouble("graduality.climate",0.12),
-                config.getDouble("graduality.water",0.75),
                 1, // Wetness is instant since it has its own custom graduality functionality
+                config.getDouble("graduality.water",0.75),
                 config.getDouble("graduality.environment",0.15),
                 config.getDouble("graduality.clothing",0.25),
                 config.getDouble("graduality.tool",0.7),
@@ -142,7 +143,7 @@ public class ConfigData {
                 DebuffRegistry.processDebuff(effect, thresholds, DebuffGracePeriod * 20);
             });
 
-        ClothingTypes = new HashMap<>();
+        ClothingTypes = new EnumMap<>(ClothingType.MaterialType.class);
         ClothingType.setDefaults(config.getDouble("clothing.default.warmth"),
                                 config.getDouble("clothing.default.resistance"));
         for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
@@ -179,7 +180,7 @@ public class ConfigData {
 
         MinimumBoilerTemperature = materialsConfig.getDouble("minimum_boiler_temperature", 25);
 
-        BlockTemperatures = new HashMap<>();
+        BlockTemperatures = new EnumMap<>(Material.class);
         readingSection = materialsConfig.getConfigurationSection("blocks");
         if (readingSection != null)
             readingSection.getKeys(false).forEach(key -> {
@@ -191,7 +192,7 @@ public class ConfigData {
                     );
             }
         );
-        ItemTemperatures = new HashMap<>();
+        ItemTemperatures = new EnumMap<>(Material.class);
         readingSection = materialsConfig.getConfigurationSection("items");
         if (readingSection != null)
             readingSection.getKeys(false).forEach(key -> {
