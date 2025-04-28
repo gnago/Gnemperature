@@ -1,5 +1,7 @@
 package me.gnago.gnemperature.manager;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 
 public class Temperature {
@@ -78,17 +80,24 @@ public class Temperature {
         return current + change;
     }
 
-    public Temperature resist(double resistance) {
-        for (Type type : Type.values())
-            if (type != Type.CLOTHING) // Clothing cannot be resisted
-                mult(type, resistance);
-        return this;
-    }
-
     public double total() {
         double total = 0;
         for (Type type : Type.values())
             total += get(type);
+        return total;
+    }
+    public double total(boolean exclude, Type...excludedTypes) {
+        double total = 0;
+        ArrayList<Type> types;
+        if (exclude) {
+            types = new ArrayList<>(Arrays.asList(Type.values()));
+            types.removeAll(Arrays.asList(excludedTypes));
+        } else {
+            types = new ArrayList<>(Arrays.asList(excludedTypes));
+        }
+        for (Type type : types) {
+            total += get(type);
+        }
         return total;
     }
 }

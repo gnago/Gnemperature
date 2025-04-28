@@ -12,7 +12,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -65,7 +64,7 @@ public class ConfigData {
     public static EnumMap<Material,Double> BlockTemperatures;
     public static EnumMap<Material,Double> ItemTemperatures;
 
-    public static HashMap<PotionEffect,Double> ResistanceEffects;
+    public static HashMap<PotionEffectType,Double> ResistanceEffects;
     public static boolean ExcludeTurtleHelmetEffect;
 
     public static HashMap<Enchantment,Double> ResistanceEnchantments;
@@ -161,7 +160,7 @@ public class ConfigData {
                 PotionEffectType effType = Registry.EFFECT.match(key.toUpperCase());
                 if (effType != null)
                     ResistanceEffects.put(
-                            new PotionEffect(effType, 8, 0),
+                            effType,
                             config.getDouble("resistance.potion_effects.list." + key, 0)
                     );
             });

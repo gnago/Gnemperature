@@ -21,7 +21,7 @@ public class DebuffRegistry {
         } else if (name.equalsIgnoreCase("freezing")) {
             return ((FunctionDebuff)Register(name, Debuff.New(name, thresholds, delay))).setFunctions(200,
                     ent -> {
-                        ent.setFreezeTicks(ent.getMaxFreezeTicks() + 210); // Stay frozen, reapply every 10 seconds
+                        ent.setFreezeTicks(ent.getMaxFreezeTicks() * 2); // Stay frozen, reapply every 10 seconds
                     },
                     ent -> { /* do nothing, freezing will go away on its own */ });
         } else {

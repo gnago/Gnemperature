@@ -57,8 +57,14 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
             displayScoreboard(true);
     }
 
+    private double feelsLikeTotal = 0;
     public double feelsLike() {
-        return feelsLike.total();
+        return feelsLikeTotal;
+    }
+    public void applyResistances() {
+        feelsLikeTotal = feelsLike.total(true, Temperature.Type.CLOTHING); // exclude clothing. Clothing cannot be resisted
+        feelsLikeTotal = applyEffectResistance(applyClothingResistance(applyCareResistance(feelsLikeTotal)));
+        feelsLikeTotal += feelsLike.total(false, Temperature.Type.CLOTHING);
     }
     public double actuallyIs() {
         return actuallyIs.total();
@@ -66,6 +72,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     public void resetFeelsLike() {
         this.feelsLike.set(this.actuallyIs);
+        feelsLikeTotal = feelsLike.total();
     }
 
     public boolean toggleSetting(Key setting, String onMessage, String offMessage) {
@@ -85,8 +92,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
         actuallyIs.set(calcClimateTemp(), calcWetnessTemp(), calcWaterTemp(), calcEnvironmentTemp(), calcClothingWarmth(), calcToolTemp(), calcActivityTemp(), calcStateTemp());
         feelsLike.approach(actuallyIs);
-        double resistTotal = applyEffectResistance(applyClothingResistance(applyCareResistance(1)));
-        //feelsLike.resist(resistTotal);
+        applyResistances();
 
 
         setDebugLine(2, "Sun/Clm", String.format("%d: %s/%s", player.getLocation().getBlock().getLightFromSky(), df.format(feelsLike.get(Temperature.Type.CLIMATE)), df.format(actuallyIs.get(Temperature.Type.CLIMATE))));
@@ -98,8 +104,7 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         setDebugLine(8, "Tool", String.format("%s/%s", df.format(feelsLike.get(Temperature.Type.TOOL)), df.format(actuallyIs.get(Temperature.Type.TOOL))));
         setDebugLine(9, "Cloth", String.format("%s/%s %s", df.format(feelsLike.get(Temperature.Type.CLOTHING)), df.format(actuallyIs.get(Temperature.Type.CLOTHING)), debugClothingResistance));
         setDebugLine(10, "Resist", String.format("%s %s", debugEffectResistance, debugCareResistance));
-        setDebugLine(11, "ResistTotal", df.format(resistTotal));
-        setDebugLine(12, "Total", String.format("%s/%s", df.format(feelsLike.total()), df.format(actuallyIs.total())));
+        setDebugLine(11, "Total", String.format("%s/%s", df.format(feelsLike()), df.format(actuallyIs())));
     }
 
     @Override
@@ -131,7 +136,6 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     }
 
     /**
-     *
      * @return time formated as HHMM. e.g. 19000, an hour past midnight, will return as 100
      */
     private long getTime() {
@@ -317,18 +321,18 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
     @Override
     public double applyClothingResistance(double temp) {
         AtomicReference<Double> aTemp = new AtomicReference<>(temp);
-        AtomicReference<Double> totalRes = new AtomicReference<>(0.0);
+        AtomicReference<Double> totalRes = new AtomicReference<>(1.0);
         EnumSet<TemperatureMethods.ResistType> resistSet = EnumSet.noneOf(TemperatureMethods.ResistType.class);
         for (ItemStack armour : getArmour()) {
             for (ClothingType.MaterialType mat : ClothingType.MaterialType.values()) {
                 if (mat.getPieces().contains(armour.getType())) {
-                    totalRes.updateAndGet(v -> v + TemperatureMethods.calcResistPercent(aTemp.get(), ConfigData.ClothingTypes.get(mat).resistance, 1, resistSet));
+                    totalRes.updateAndGet(v -> v * TemperatureMethods.calcResistPercent(aTemp.get(), ConfigData.ClothingTypes.get(mat).resistance, 1, resistSet));
                     break; // Armour can only be of one type
                 }
             }
             ConfigData.ResistanceEnchantments.forEach((enchant, res) -> {
                 if (armour.containsEnchantment(enchant)) {
-                    totalRes.updateAndGet(v -> v + TemperatureMethods.calcResistPercent(aTemp.get(), res, armour.getEnchantmentLevel(enchant), resistSet));
+                    totalRes.updateAndGet(v -> v * TemperatureMethods.calcResistPercent(aTemp.get(), res, armour.getEnchantmentLevel(enchant), resistSet));
                 }
             });
         }
@@ -336,9 +340,13 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         debugClothingResistance.append(ChatColor.LIGHT_PURPLE).append("Res ").append(ChatColor.RESET)
                 .append(df.format((1-totalRes.get())*100)).append("%");
         if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.COLD))
-            debugClothingResistance.append(ChatColor.AQUA).append(" C");
+            debugClothingResistance.append(ChatColor.AQUA).append("C");
+        else
+            debugClothingResistance.append(" ");
         if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.HOT))
-            debugClothingResistance.append(ChatColor.RED).append(" H");
+            debugClothingResistance.append(ChatColor.RED).append("H");
+        else
+            debugClothingResistance.append(" ");
         return temp;
     }
 
@@ -385,25 +393,31 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
 
     @Override
     public double applyEffectResistance(double temp) {
-        double resistPercent = 0;
+        double resistPercent = 1;
         EnumSet<TemperatureMethods.ResistType> resistSet = EnumSet.noneOf(TemperatureMethods.ResistType.class);
         for (PotionEffect effect : player.getActivePotionEffects()) {
-            if (effect != null && ConfigData.ResistanceEffects.containsKey(effect)) {
+            if (effect != null && ConfigData.ResistanceEffects.containsKey(effect.getType())) {
                 if (!ConfigData.ExcludeTurtleHelmetEffect ||
                     effect.getType() != PotionEffectType.WATER_BREATHING || effect.getDuration() > 200) {
-                    resistPercent += TemperatureMethods.calcResistPercent(temp, ConfigData.ResistanceEffects.get(effect), effect.getAmplifier(), resistSet);
+                    resistPercent *= TemperatureMethods.calcResistPercent(temp, ConfigData.ResistanceEffects.get(effect.getType()), effect.getAmplifier(), resistSet);
                 }
             }
         }
+        debugEffectResistance.append(ChatColor.LIGHT_PURPLE).append("E ").append(ChatColor.RESET).append(df.format((1-resistPercent)*100.0)).append("%");
         if (!resistSet.isEmpty()) {
-            debugEffectResistance.append(ChatColor.LIGHT_PURPLE).append("E ").append(ChatColor.RESET).append(df.format((1-resistPercent)*100.0)).append("%");
             if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.COLD))
-                debugClothingResistance.append(ChatColor.AQUA).append(" C");
+                debugEffectResistance.append(ChatColor.AQUA).append("C");
+            else
+                debugEffectResistance.append(" ");
             if (resistSet.contains(TemperatureMethods.ResistType.BOTH) || resistSet.contains(TemperatureMethods.ResistType.HOT))
-                debugClothingResistance.append(ChatColor.RED).append(" H");
+                debugEffectResistance.append(ChatColor.RED).append("H");
+            else
+                debugEffectResistance.append(" ");
 
             temp = TemperatureMethods.calcResistBasic(temp, resistPercent);
             temp = Math.max(Math.min(temp, ConfigData.ResistTemperatureMax), ConfigData.ResistTemperatureMin);
+        } else {
+            debugEffectResistance.append("  ");
         }
         return temp;
     }
@@ -453,11 +467,13 @@ public class PlayerData extends PlayerSettings implements PlayerMethods, PlayerT
         });
     }
     public void removeAllDebuffs() {
+        activeDebuffs.forEach(d -> d.clear(player));
+        activeDebuffs.clear();
         scheduledDebuffs.forEach((id, debuff) -> {
-                scheduledDebuffs.remove(id);
                 if (Bukkit.getScheduler().isQueued(id))
                     Bukkit.getScheduler().cancelTask(id);
         });
+        scheduledDebuffs.clear();
     }
 
     @Override

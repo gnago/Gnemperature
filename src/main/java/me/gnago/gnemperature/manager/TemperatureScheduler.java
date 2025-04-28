@@ -43,10 +43,8 @@ public abstract class TemperatureScheduler {
 
             //Clean up
             GnemperaturePlugin.getInstance().getPlayerData().forEach((p, d) -> {
-                d.resetFeelsLike();
                 d.removeAllDebuffs();
             });
-            update();
         }
     }
 
